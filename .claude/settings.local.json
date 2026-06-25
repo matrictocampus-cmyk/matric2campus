@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm list *)",
+      "Bash(npm run *)",
+      "Bash(claude mcp *)",
+      "Skill(update-config)",
+      "mcp__supabase__list_projects",
+      "Bash(xargs wc *)",
+      "Bash(xargs grep *)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__get_advisors",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__apply_migration"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "netlify"
+  ]
+}

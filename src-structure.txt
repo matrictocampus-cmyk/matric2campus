@@ -1,0 +1,97 @@
+Folder PATH listing for volume Windows
+Volume serial number is BEDE-8388
+C:\PROJECTS\TXI-FRONTEND\SRC
+|   App.css
+|   App.jsx
+|   AppRoutes.jsx
+|   index.css
+|   main.jsx
+|   
++---assets
+|       react.svg
+|       
++---components
+|   |   EligibilityFlow.jsx
+|   |   Loader.jsx
+|   |   
+|   +---cards
+|   |       ActionCard.jsx
+|   |       StatusCard.jsx
+|   |       WelcomeCard.jsx
+|   |       
+|   +---Eligibility
+|   |       EligibilityResults.jsx
+|   |       EligibilityWizard.jsx
+|   |       EligibiltyCard.jsx
+|   |       PathPlanner.jsx
+|   |       PathPlannerCard.jsx
+|   |       Step1Education.jsx
+|   |       Step2Subjects.jsx
+|   |       Step3Financial.jsx
+|   |       Step4LifeStyle.jsx
+|   |       Step5Barriers.jsx
+|   |       Step6Summary.jsx
+|   |       
+|   +---Header
+|   |       TopHeader.jsx
+|   |       
+|   +---stepper
+|   |       Stepper.jsx
+|   |       
+|   +---tables
+|   |       ApplicationsTable.jsx
+|   |       
+|   \---ui
+|           Button.jsx
+|           ConfirmSignOut.jsx
+|           
++---data
+|       programs.js
+|       
++---hooks
+|       useEligibility.js
+|       
++---Layout
+|       Layout.jsx
+|       SideBar.jsx
+|       TopBar.jsx
+|       
++---lib
+|       supabase.js
+|       
++---pages
+|   |   Applications.jsx
+|   |   Apply.jsx
+|   |   Courses.jsx
+|   |   Dashboard.jsx
+|   |   Eligibility.jsx
+|   |   Institutions.jsx
+|   |   Login.jsx
+|   |   Payment.jsx
+|   |   Settings.jsx
+|   |   
+|   +---Auth
+|   |       Login.jsx
+|   |       Register.jsx
+|   |       
+|   \---Profile
+|           ProfileWizard.jsx
+|           Step1Personal.jsx
+|           Step2Contact.jsx
+|           Step3Academics.jsx
+|           Step4Interests.jsx
+|           Step5Uploads.jsx
+|           Step6Review.jsx
+|           
++---router
+|       Router.tsx
+|       
++---services
+|       api.js
+|       auth.js
+|       
+\---utils
+        eligibility.js
+        helpers.js
+        institutions.js
+        

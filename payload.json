@@ -1,0 +1,32 @@
+{
+  "profile": {
+    "manual_results": {
+      "Mathematics": 65,
+      "Physical Science": 58
+    },
+    "has_work_experience": false
+  },
+  "courses": [
+    {
+      "title": "Mechanical Engineering",
+      "entry_requirements": {
+        "required_subjects": {
+          "all_of": ["Mathematics", "Physical Science"],
+          "any_of": []
+        },
+        "additional_requirements": {
+          "work_experience_required": false
+        }
+      }
+    },
+    {
+      "title": "Business Management",
+      "entry_requirements": {
+        "required_subjects": {
+          "all_of": ["Accounting"],
+          "any_of": []
+        }
+      }
+    }
+  ]
+}

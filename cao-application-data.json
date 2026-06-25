@@ -1,0 +1,78 @@
+{
+  "personalInfo": {
+    "firstName": "John",
+    "lastName": "Doe",
+    "idNumber": "2001014800082",
+    "email": "student@example.com",
+    "phone": "0712345678",
+    "dateOfBirth": "2001-01-01"
+  },
+  "academicInfo": {
+    "school": "Your School Name",
+    "year": "2024",
+    "subjects": [
+      {
+        "name": "Mathematics",
+        "level": "Higher",
+        "percentage": 78
+      },
+      {
+        "name": "Physical Sciences",
+        "level": "Higher",
+        "percentage": 82
+      },
+      {
+        "name": "English",
+        "level": "Home",
+        "percentage": 88
+      }
+    ]
+  },
+  "courseChoices": [
+    {
+      "choiceNumber": 1,
+      "institution": "University",
+      "course": "Bachelor of Business Administration",
+      "type": "university"
+    },
+    {
+      "choiceNumber": 2,
+      "institution": "University",
+      "course": "B Com (Accounting - Extended)",
+      "type": "university"
+    },
+    {
+      "choiceNumber": 3,
+      "institution": "University",
+      "course": "B Com (Accounting)",
+      "type": "university"
+    },
+    {
+      "choiceNumber": 4,
+      "institution": "University",
+      "course": "B Com (General)",
+      "type": "university"
+    },
+    {
+      "choiceNumber": 5,
+      "institution": "University",
+      "course": "Bachelor of Administration",
+      "type": "university"
+    },
+    {
+      "choiceNumber": 6,
+      "institution": "University",
+      "course": "Bachelor of Business Science in Finance",
+      "type": "university"
+    }
+  ],
+  "package": {
+    "name": "ALL UNIVERSITIES",
+    "price": 75,
+    "limits": {
+      "university": 6
+    }
+  },
+  "exportedAt": "2026-01-14T16:19:20.732Z",
+  "exportedBy": "TXI Automation System"
+}

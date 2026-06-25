@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Assistance Request</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===== MODAL STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }
+
+        .modal-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            max-height: 95vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== HEADER ===== */
+        .modal-header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 25px 30px;
+            position: relative;
+        }
+
+        .modal-header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-header .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .progress-container {
+            padding: 0 30px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #4CAF50, #2196F3);
+            width: 20%;
+            transition: width 0.5s ease;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .progress-steps span.active {
+            color: #2196F3;
+            font-weight: 600;
+        }
+
+        /* ===== CONTENT AREA ===== */
+        .modal-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e3c72;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-description {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 15px;
+        }
+
+        /* ===== FORM ELEMENTS ===== */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* ===== CONTACT OPTIONS ===== */
+        .contact-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .contact-option {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .contact-option:hover {
+            border-color: #2196F3;
+            transform: translateY(-2px);
+        }
+
+        .contact-option.selected {
+            border-color: #2196F3;
+            background: #e3f2fd;
+        }
+
+        .contact-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .contact-option.selected .contact-icon {
+            color: #2196F3;
+        }
+
+        .contact-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .contact-desc {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* ===== CHECKBOXES ===== */
+        .checkbox-group {
+            margin-bottom: 15px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .checkbox-item:hover {
+            background: #f0f7ff;
+            border-color: #2196F3;
+        }
+
+        .checkbox-item input {
+            margin-top: 3px;
+            margin-right: 12px;
+            min-width: 18px;
+            height: 18px;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .checkbox-label strong {
+            display: block;
+            margin-bottom: 3px;
+            color: #333;
+        }
+
+        .checkbox-label small {
+            color: #666;
+            font-size: 13px;
+        }
+
+        /* ===== DOCUMENT UPLOAD ===== */
+        .document-upload {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .document-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .document-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .document-required {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: #ffebee;
+            color: #d32f2f;
+            font-weight: 500;
+        }
+
+        .document-upload-area {
+            border: 2px dashed #bdbdbd;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .document-upload-area:hover {
+            border-color: #2196F3;
+            background: #f8fdff;
+        }
+
+        .document-upload-area input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #bdbdbd;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* ===== URGENCY LEVELS ===== */
+        .urgency-levels {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .urgency-level {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .urgency-level:hover {
+            transform: translateY(-2px);
+        }
+
+        .urgency-level.selected {
+            border-width: 3px;
+        }
+
+        .urgency-level.low.selected { border-color: #4CAF50; background: #e8f5e9; }
+        .urgency-level.normal.selected { border-color: #2196F3; background: #e3f2fd; }
+        .urgency-level.high.selected { border-color: #FF9800; background: #fff3e0; }
+        .urgency-level.urgent.selected { border-color: #f44336; background: #ffebee; }
+
+        .urgency-emoji {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .urgency-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+            text-transform: capitalize;
+        }
+
+        .urgency-time {
+            font-size: 11px;
+            color: #666;
+        }
+
+        /* ===== SUMMARY BOX ===== */
+        .summary-box {
+            border: 2px solid #e3f2fd;
+            border-radius: 12px;
+            padding: 20px;
+            background: #f8fdff;
+            margin-bottom: 25px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            color: #666;
+        }
+
+        .summary-value {
+            font-weight: 500;
+        }
+
+        .summary-value.urgent { color: #f44336; }
+        .summary-value.high { color: #FF9800; }
+        .summary-value.normal { color: #2196F3; }
+        .summary-value.low { color: #4CAF50; }
+
+        /* ===== ALERT BOXES ===== */
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            color: #1565c0;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            border-left: 4px solid #FF9800;
+            color: #ef6c00;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            color: #2e7d32;
+        }
+
+        .alert-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        /* ===== NEXT STEPS ===== */
+        .next-steps {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .next-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .next-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            background: #2196F3;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-weight: 500;
+            margin-bottom: 3px;
+            color: #333;
+        }
+
+        .step-content p {
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* ===== SUCCESS SCREEN ===== */
+        .success-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .success-icon {
+            font-size: 80px;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        .success-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1e3c72;
+            margin-bottom: 10px;
+        }
+
+        .success-reference {
+            font-family: monospace;
+            font-size: 18px;
+            background: #f5f5f5;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin: 15px 0;
+            color: #2196F3;
+            font-weight: 600;
+        }
+
+        /* ===== NAVIGATION BUTTONS ===== */
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #eaeaea;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-back {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-back:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-close {
+            background: #6a11cb;
+            color: white;
+            width: 100%;
+        }
+
+        /* ===== DOCUMENT UPLOADED STATE ===== */
+        .document-uploaded {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+        }
+
+        .document-uploaded .upload-icon {
+            color: #4CAF50;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .file-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .remove-file {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .remove-file:hover {
+            text-decoration: underline;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .contact-options, .urgency-levels {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+            
+            .modal-header {
+                padding: 20px;
+            }
+            
+            .step-title {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="modal-container">
+        <!-- HEADER -->
+        <div class="modal-header">
+            <button class="close-btn" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h1>
+                <i class="fas fa-user-tie"></i>
+                Admin Application Assistance
+            </h1>
+            <p class="subtitle">Let our experts handle your CAO application</p>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-steps">
+                <span id="step1Label" class="active">Contact</span>
+                <span id="step2Label">Terms</span>
+                <span id="step3Label">Documents</span>
+                <span id="step4Label">Instructions</span>
+                <span id="step5Label">Review</span>
+            </div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="modal-content">
+            <!-- STEP 1: CONTACT PREFERENCES -->
+            <div class="step active" id="step1">
+                <h2 class="step-title">
+                    <i class="fas fa-phone-alt"></i>
+                    Contact Preferences
+                </h2>
+                <p class="step-description">How should our team contact you for clarifications?</p>
+
+                <div class="contact-options">
+                    <div class="contact-option" onclick="selectContact('email')">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="contact-name">Email</div>
+                        <div class="contact-desc">Slow but formal</div>
+                    </div>
+
+                    <div class="contact-option" onclick="selectContact('whatsapp')">
+                        <div class="contact-icon">
+                            <i class="fab fa-whatsapp"></i>
+                        </div>
+                        <div class="contact-name">WhatsApp</div>
+                        <div class="contact-desc">Quick & casual</div>
+                    </div>
+
+                    <div class="contact-option" onclick="selectContact('phone')">
+                        <div class="contact-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="contact-name">Phone Call</div>
+                        <div class="contact-desc">Direct & personal</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" id="contactLabel">Email Address</label>
+                    <input type="text" class="form-input" id="contactInput" 
+                           placeholder="you@example.com" oninput="validateContact()">
+                    <div class="alert alert-info" style="margin-top: 10px;">
+                        <i class="fas fa-info-circle alert-icon"></i>
+                        <div>We'll use this to contact you about your application. Please double-check it's correct.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: TERMS & AGREEMENT -->
+            <div class="step" id="step2">
+                <h2 class="step-title">
+                    <i class="fas fa-file-contract"></i>
+                    Terms & Data Protection
+                </h2>
+                <p class="step-description">Please review and agree to our terms</p>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-shield-alt alert-icon"></i>
+                    <div>
+                        <strong>POPIA Compliance Notice:</strong> All documents are encrypted and automatically deleted after 72 hours. 
+                        We never store sensitive information permanently.
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <div class="checkbox-item" onclick="toggleCheckbox('agreeTerms')">
+                        <input type="checkbox" id="agreeTerms">
+                        <label class="checkbox-label">
+                            <strong>I agree to the Terms of Service and Data Processing Agreement</strong>
+                            <small>I understand TXI will process my information for CAO application submission only.</small>
+                        </label>
+                    </div>
+
+                    <div class="checkbox-item" onclick="toggleCheckbox('agreeDeletion')">
+                        <input type="checkbox" id="agreeDeletion">
+                        <label class="checkbox-label">
+                            <strong>I understand my documents will be deleted within 72 hours</strong>
+                            <small>All sensitive files are automatically purged after application submission.</small>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-gavel alert-icon"></i>
+                    <div>
+                        <strong>Your Rights:</strong> You may withdraw consent anytime before submission by emailing 
+                        TertiaryXinterface@gmail.com. View our full Privacy Policy on our website.
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: DOCUMENT UPLOAD -->
+            <div class="step" id="step3">
+                <h2 class="step-title">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Upload Documents
+                </h2>
+                <p class="step-description">All files are encrypted during upload and storage</p>
+
+                <!-- ID DOCUMENT -->
+                <div class="document-upload" id="idDocument">
+                    <div class="document-header">
+                        <div class="document-title">Certified ID Copy</div>
+                        <span class="document-required">Required</span>
+                    </div>
+                    <div class="document-upload-area" onclick="triggerFileInput('idFile')">
+                        <input type="file" id="idFile" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileUpload(this, 'id')">
+                        <div class="upload-icon">
+                            <i class="fas fa-id-card"></i>
+                        </div>
+                        <div class="upload-text">Click to upload or drag and drop</div>
+                        <div class="upload-hint">PDF, JPG, or PNG (max 5MB)</div>
+                    </div>
+                </div>
+
+                <!-- ACADEMIC DOCUMENT -->
+                <div class="document-upload" id="academicDocument">
+                    <div class="document-header">
+                        <div class="document-title">Academic Results</div>
+                        <span class="document-required">Required</span>
+                    </div>
+                    <div class="document-upload-area" onclick="triggerFileInput('academicFile')">
+                        <input type="file" id="academicFile" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileUpload(this, 'academic')">
+                        <div class="upload-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="upload-text">Click to upload or drag and drop</div>
+                        <div class="upload-hint">Latest report or matric certificate</div>
+                    </div>
+                </div>
+
+                <!-- PAYMENT PROOF -->
+                <div class="document-upload" id="paymentDocument">
+                    <div class="document-header">
+                        <div class="document-title">Proof of Payment</div>
+                        <span class="document-required">Required</span>
+                    </div>
+                    <div class="document-upload-area" onclick="triggerFileInput('paymentFile')">
+                        <input type="file" id="paymentFile" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileUpload(this, 'payment')">
+                        <div class="upload-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="upload-text">Click to upload or drag and drop</div>
+                        <div class="upload-hint">Bank statement showing TXI payment</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-success">
+                    <i class="fas fa-lock alert-icon"></i>
+                    <div>
+                        <strong>Security:</strong> Your documents are encrypted immediately upon upload. 
+                        Even our admins cannot view them until manually decrypted for processing.
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4: SPECIAL INSTRUCTIONS -->
+            <div class="step" id="step4">
+                <h2 class="step-title">
+                    <i class="fas fa-edit"></i>
+                    Special Instructions
+                </h2>
+                <p class="step-description">Optional: Tell us about any special requirements</p>
+
+                <div class="form-group">
+                    <label class="form-label">Urgency Level</label>
+                    <div class="urgency-levels">
+                        <div class="urgency-level low" onclick="selectUrgency('low')">
+                            <div class="urgency-emoji">🐌</div>
+                            <div class="urgency-name">Low</div>
+                            <div class="urgency-time">5-7 days</div>
+                        </div>
+                        <div class="urgency-level normal selected" onclick="selectUrgency('normal')">
+                            <div class="urgency-emoji">📅</div>
+                            <div class="urgency-name">Normal</div>
+                            <div class="urgency-time">3-5 days</div>
+                        </div>
+                        <div class="urgency-level high" onclick="selectUrgency('high')">
+                            <div class="urgency-emoji">⚡</div>
+                            <div class="urgency-name">High</div>
+                            <div class="urgency-time">1-2 days</div>
+                        </div>
+                        <div class="urgency-level urgent" onclick="selectUrgency('urgent')">
+                            <div class="urgency-emoji">🚨</div>
+                            <div class="urgency-name">Urgent</div>
+                            <div class="urgency-time">12-24 hours</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Special Instructions for Admin Team</label>
+                    <textarea class="form-textarea" id="instructions" 
+                              placeholder="Example: Please prioritize UKZN applications, I have a disability accommodation request, I need help with financial aid section..."></textarea>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Any special requirements, deadlines, or notes for our team
+                    </small>
+                </div>
+            </div>
+
+            <!-- STEP 5: REVIEW & SUBMIT -->
+            <div class="step" id="step5">
+                <h2 class="step-title">
+                    <i class="fas fa-check-circle"></i>
+                    Review & Submit
+                </h2>
+                <p class="step-description">Please review your request before submitting</p>
+
+                <div class="summary-box">
+                    <div class="summary-item">
+                        <span class="summary-label">Reference Number:</span>
+                        <span class="summary-value" id="reviewReference">TXI-USER-20241225</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Contact Method:</span>
+                        <span class="summary-value" id="reviewContact">Email</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Urgency:</span>
+                        <span class="summary-value normal" id="reviewUrgency">Normal</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Documents Ready:</span>
+                        <span class="summary-value" id="reviewDocuments">0/3</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Package:</span>
+                        <span class="summary-value" id="reviewPackage">ALL Package</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Courses:</span>
+                        <span class="summary-value" id="reviewCourses">3 courses</span>
+                    </div>
+                </div>
+
+                <div class="next-steps">
+                    <h3 style="margin-bottom: 15px; color: #333;">What Happens Next?</h3>
+                    <div class="next-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Request Received</h4>
+                            <p>You'll get a confirmation email within 15 minutes</p>
+                        </div>
+                    </div>
+                    <div class="next-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Admin Assignment</h4>
+                            <p>A TXI admin will be assigned within 24 hours</p>
+                        </div>
+                    </div>
+                    <div class="next-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Application Submission</h4>
+                            <p>Your CAO application will be completed</p>
+                        </div>
+                    </div>
+                    <div class="next-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Confirmation</h4>
+                            <p>You'll receive CAO confirmation details</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle alert-icon"></i>
+                    <div>
+                        <strong>Important:</strong> Once submitted, this request cannot be modified. 
+                        To make changes, you'll need to contact our support team.
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUCCESS SCREEN -->
+            <div class="step" id="successStep">
+                <div class="success-screen">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h1 class="success-title">Request Submitted Successfully!</h1>
+                    <p style="color: #666; margin-bottom: 20px;">
+                        Your admin assistance request has been received. Our team will contact you shortly.
+                    </p>
+                    <div class="success-reference" id="finalReference">TXI-USER-20241225</div>
+                    <div class="alert alert-success" style="max-width: 500px; margin: 20px auto;">
+                        <i class="fas fa-envelope alert-icon"></i>
+                        <div>Confirmation email sent to <strong id="confirmationEmail">user@example.com</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER / NAVIGATION -->
+        <div class="modal-footer">
+            <button class="btn btn-back" onclick="previousStep()" id="backBtn">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <button class="btn btn-next" onclick="nextStep()" id="nextBtn">
+                Continue <i class="fas fa-arrow-right"></i>
+            </button>
+            <button class="btn btn-submit" onclick="submitRequest()" id="submitBtn" style="display: none;">
+                <i class="fas fa-paper-plane"></i> Submit Request
+            </button>
+            <button class="btn btn-close" onclick="closeModal()" id="closeBtn" style="display: none;">
+                <i class="fas fa-check"></i> Close & Track Status
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ===== GLOBAL STATE =====
+        let currentStep = 1;
+        const totalSteps = 5;
+        const formData = {
+            contactMethod: 'email',
+            contactDetails: '',
+            agreeTerms: false,
+            agreeDeletion: false,
+            documents: {
+                id: null,
+                academic: null,
+                payment: null
+            },
+            urgency: 'normal',
+            instructions: '',
+            referenceNumber: generateReference()
+        };
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgress();
+            updateReviewSection();
+            
+            // Set default package and courses (you can populate these from parent)
+            document.getElementById('reviewPackage').textContent = 'ALL Package (R250)';
+            document.getElementById('reviewCourses').textContent = '3 courses selected';
+        });
+
+        // ===== NAVIGATION FUNCTIONS =====
+        function updateProgress() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            
+            // Update step labels
+            for (let i = 1; i <= totalSteps; i++) {
+                const label = document.getElementById(`step${i}Label`);
+                if (label) {
+                    label.classList.toggle('active', i === currentStep);
+                }
+            }
+            
+            // Show/hide steps
+            for (let i = 1; i <= totalSteps; i++) {
+                const step = document.getElementById(`step${i}`);
+                if (step) {
+                    step.classList.toggle('active', i === currentStep);
+                }
+            }
+            
+            // Show/hide success screen
+            document.getElementById('successStep').classList.toggle('active', currentStep === 6);
+            
+            // Update navigation buttons
+            updateNavigationButtons();
+        }
+
+        function updateNavigationButtons() {
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const closeBtn = document.getElementById('closeBtn');
+            
+            if (currentStep === 1) {
+                backBtn.style.display = 'none';
+                nextBtn.style.display = 'flex';
+                submitBtn.style.display = 'none';
+                closeBtn.style.display = 'none';
+            } else if (currentStep === totalSteps) {
+                backBtn.style.display = 'flex';
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'flex';
+                closeBtn.style.display = 'none';
+            } else if (currentStep === 6) {
+                backBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'none';
+                closeBtn.style.display = 'flex';
+            } else {
+                backBtn.style.display = 'flex';
+                nextBtn.style.display = 'flex';
+                submitBtn.style.display = 'none';
+                closeBtn.style.display = 'none';
+            }
+            
+            // Update next button text for last step
+            if (currentStep === totalSteps - 1) {
+                nextBtn.innerHTML = 'Review <i class="fas fa-arrow-right"></i>';
+            } else {
+                nextBtn.innerHTML = 'Continue <i class="fas fa-arrow-right"></i>';
+            }
+        }
+
+        function nextStep() {
+            if (!validateStep(currentStep)) {
+                return;
+            }
+            
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateProgress();
+                updateReviewSection();
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateProgress();
+            }
+        }
+
+        // ===== FORM VALIDATION =====
+        function validateStep(step) {
+            switch(step) {
+                case 1:
+                    if (!formData.contactDetails) {
+                        alert('Please provide your contact details');
+                        return false;
+                    }
+                    
+                    if (formData.contactMethod === 'email') {
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailRegex.test(formData.contactDetails)) {
+                            alert('Please enter a valid email address');
+                            return false;
+                        }
+                    } else if (formData.contactMethod === 'whatsapp' || formData.contactMethod === 'phone') {
+                        const phoneRegex = /^[0-9\s\-\+\(\)]{10,}$/;
+                        if (!phoneRegex.test(formData.contactDetails.replace(/\s/g, ''))) {
+                            alert('Please enter a valid phone number');
+                            return false;
+                        }
+                    }
+                    return true;
+                    
+                case 2:
+                    if (!formData.agreeTerms || !formData.agreeDeletion) {
+                        alert('Please agree to all terms before proceeding');
+                        return false;
+                    }
+                    return true;
+                    
+                case 3:
+                    const uploadedCount = Object.values(formData.documents).filter(doc => doc !== null).length;
+                    if (uploadedCount < 3) {
+                        alert(`Please upload all required documents. Currently ${uploadedCount}/3 uploaded.`);
+                        return false;
+                    }
+                    return true;
+                    
+                default:
+                    return true;
+            }
+        }
+
+        // ===== FORM HANDLERS =====
+        function selectContact(method) {
+            formData.contactMethod = method;
+            
+            // Update UI
+            document.querySelectorAll('.contact-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            
+            // Update label and placeholder
+            const label = document.getElementById('contactLabel');
+            const input = document.getElementById('contactInput');
+            
+            switch(method) {
+                case 'email':
+                    label.textContent = 'Email Address';
+                    input.type = 'email';
+                    input.placeholder = 'you@example.com';
+                    break;
+                case 'whatsapp':
+                    label.textContent = 'WhatsApp Number';
+                    input.type = 'tel';
+                    input.placeholder = '071 234 5678';
+                    break;
+                case 'phone':
+                    label.textContent = 'Phone Number';
+                    input.type = 'tel';
+                    input.placeholder = '071 234 5678';
+                    break;
+            }
+            
+            // Clear input
+            input.value = '';
+            formData.contactDetails = '';
+        }
+
+        function validateContact() {
+            formData.contactDetails = document.getElementById('contactInput').value;
+        }
+
+        function toggleCheckbox(checkboxId) {
+            const checkbox = document.getElementById(checkboxId);
+            checkbox.checked = !checkbox.checked;
+            formData[checkboxId] = checkbox.checked;
+        }
+
+        function triggerFileInput(inputId) {
+            document.getElementById(inputId).click();
+        }
+
+        function handleFileUpload(input, type) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            // Check file size (5MB limit)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File must be less than 5MB');
+                return;
+            }
+            
+            // Update form data
+            formData.documents[type] = {
+                name: file.name,
+                size: file.size,
+                type: file.type
+            };
+            
+            // Update UI
+            const uploadArea = input.parentElement;
+            uploadArea.classList.add('document-uploaded');
+            
+            uploadArea.innerHTML = `
+                <div class="upload-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="upload-text">Document Uploaded</div>
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                    <div class="remove-file" onclick="removeFile('${type}', event)">
+                        <i class="fas fa-trash"></i> Remove file
+                    </div>
+                </div>
+            `;
+            
+            // Update review section
+            updateReviewSection();
+        }
+
+        function removeFile(type, event) {
+            event.stopPropagation();
+            
+            // Reset form data
+            formData.documents[type] = null;
+            
+            // Reset UI
+            const documentDiv = document.getElementById(`${type}Document`);
+            const uploadArea = documentDiv.querySelector('.document-upload-area');
+            
+            uploadArea.classList.remove('document-uploaded');
+            uploadArea.innerHTML = `
+                <input type="file" id="${type}File" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileUpload(this, '${type}')">
+                <div class="upload-icon">
+                    <i class="fas fa-${type === 'id' ? 'id-card' : type === 'academic' ? 'graduation-cap' : 'receipt'}"></i>
+                </div>
+                <div class="upload-text">Click to upload or drag and drop</div>
+                <div class="upload-hint">${type === 'id' ? 'PDF, JPG, or PNG (max 5MB)' : 
+                                           type === 'academic' ? 'Latest report or matric certificate' : 
+                                           'Bank statement showing TXI payment'}</div>
+            `;
+            
+            // Update review section
+            updateReviewSection();
+        }
+
+        function selectUrgency(level) {
+            formData.urgency = level;
+            
+            // Update UI
+            document.querySelectorAll('.urgency-level').forEach(el => {
+                el.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            
+            // Update review section
+            updateReviewSection();
+        }
+
+        // ===== REVIEW SECTION =====
+        function updateReviewSection() {
+            // Update contact method
+            const contactMethods = {
+                email: 'Email',
+                whatsapp: 'WhatsApp',
+                phone: 'Phone Call'
+            };
+            document.getElementById('reviewContact').textContent = contactMethods[formData.contactMethod];
+            
+            // Update urgency
+            document.getElementById('reviewUrgency').textContent = formData.urgency.charAt(0).toUpperCase() + formData.urgency.slice(1);
+            document.getElementById('reviewUrgency').className = `summary-value ${formData.urgency}`;
+            
+            // Update documents count
+            const uploadedCount = Object.values(formData.documents).filter(doc => doc !== null).length;
+            document.getElementById('reviewDocuments').textContent = `${uploadedCount}/3`;
+            
+            // Update reference number
+            document.getElementById('reviewReference').textContent = formData.referenceNumber;
+            document.getElementById('finalReference').textContent = formData.referenceNumber;
+            
+            // Update confirmation email
+            if (formData.contactMethod === 'email') {
+                document.getElementById('confirmationEmail').textContent = formData.contactDetails;
+            }
+        }
+
+        // ===== SUBMIT REQUEST =====
+        function submitRequest() {
+            // Validate all steps
+            for (let i = 1; i <= totalSteps; i++) {
+                if (!validateStep(i)) {
+                    currentStep = i;
+                    updateProgress();
+                    alert('Please complete all required fields');
+                    return;
+                }
+            }
+            
+            // Get instructions
+            formData.instructions = document.getElementById('instructions').value;
+            
+            // Create request object
+            const requestData = {
+                ...formData,
+                submittedAt: new Date().toISOString(),
+                package: 'ALL Package (R250)', // Get from parent
+                courses: 3, // Get from parent
+                status: 'pending'
+            };
+            
+            console.log('Submitting admin request:', requestData);
+            
+            // In production: Send to backend API
+            // For now, just show success
+            currentStep = 6;
+            updateProgress();
+            
+            // Send email notification (simulated)
+            sendAdminEmail(requestData);
+            
+            // Save to localStorage (for demo)
+            saveToLocalStorage(requestData);
+        }
+
+        function sendAdminEmail(request) {
+            const emailData = {
+                to: 'TertiaryXinterface@gmail.com',
+                subject: `New Admin Request - ${request.referenceNumber}`,
+                body: `
+New Admin Assistance Request Received:
+
+Reference: ${request.referenceNumber}
+Contact: ${request.contactMethod}: ${request.contactDetails}
+Urgency: ${request.urgency}
+Package: ALL Package
+Courses: 3 courses
+
+Documents uploaded: ${Object.values(request.documents).filter(doc => doc !== null).length}/3
+
+Special instructions: ${request.instructions || 'None'}
+
+Please check the admin portal for details.
+                `
+            };
+            
+            console.log('Email sent to admin:', emailData);
+            // In production: Call your email API
+        }
+
+        function saveToLocalStorage(request) {
+            const existingRequests = JSON.parse(localStorage.getItem('txi_admin_requests') || '[]');
+            existingRequests.push(request);
+            localStorage.setItem('txi_admin_requests', JSON.stringify(existingRequests));
+            console.log('Request saved to localStorage');
+        }
+
+        // ===== UTILITY FUNCTIONS =====
+        function generateReference() {
+            const userId = localStorage.getItem('txi_user_id') || 'USER';
+            const date = new Date();
+            const dateStr = date.getFullYear() + 
+                          String(date.getMonth() + 1).padStart(2, '0') + 
+                          String(date.getDate()).padStart(2, '0');
+            return `TXI-${userId}-${dateStr}`;
+        }
+
+        function closeModal() {
+            // In production: Close the modal/window
+            // For standalone HTML: Redirect or close
+            alert('Modal closed. In production, this would close the popup/window.');
+            
+            // If running in iframe/popup, close window
+            if (window.opener) {
+                window.close();
+            }
+        }
+
+        // ===== DRAG & DROP SUPPORT =====
+        document.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        document.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                // Find which upload area is being hovered
+                const uploadAreas = document.querySelectorAll('.document-upload-area');
+                uploadAreas.forEach(area => {
+                    const rect = area.getBoundingClientRect();
+                    if (e.clientX >= rect.left && e.clientX <= rect.right &&
+                        e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                        
+                        // Trigger file input
+                        const input = area.querySelector('input[type="file"]');
+                        if (input) {
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(files[0]);
+                            input.files = dataTransfer.files;
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

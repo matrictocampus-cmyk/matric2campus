@@ -1,491 +1,587 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  ArrowRight,
-  CheckCircle,
-  Users,
-  BookOpen,
-  Shield,
-  Award,
-  Target,
-  Zap,
-  Star,
-  ChevronRight,
-  Globe,
-  Lock,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  TrendingUp,
-  Heart,
-} from "lucide-react";
-
-// Import your auth components
+import React, { useState, useRef, useEffect } from "react";
+import { ClipboardList, GraduationCap, BarChart2, BookOpen } from "lucide-react";
 import Login from "./Auth/Login";
 import Register from "./Auth/Register";
 
+const SAFlag = () => (
+  <img
+    src="/sa-flag.svg"
+    alt=""
+    aria-hidden="true"
+    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+  />
+);
+
+const FEATURES = [
+  { Icon: ClipboardList, color: "#6366f1", title: "Free Career Quiz",  desc: "Discover what you qualify for based on your marks and interests." },
+  { Icon: GraduationCap, color: "#007A4D",  title: "Explore Degrees",  desc: "Find degrees and careers you never knew existed." },
+  { Icon: BarChart2,     color: "#FFB612",  title: "Smart Insights",   desc: "Personalised insights about your future opportunities." },
+  { Icon: BookOpen,      color: "#DE3831",  title: "Resources",        desc: "Guides and tools to help you make informed decisions." },
+];
+
 export default function Landing() {
-  const [showRegister, setShowRegister] = useState(false);
-  const [activeFeature, setActiveFeature] = useState(0);
-  const navigate = useNavigate();
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState("register");
 
-  const features = [
-    {
-      icon: <Target className="h-8 w-8" />,
-      title: "Smart Applications System",
-      description: "Smart tools to find courses that fit your exact profile and academic results.",
-      color: "from-emerald-500 to-teal-500",
-    },
-    {
-      icon: <Zap className="h-8 w-8" />,
-      title: "One-Click Applications",
-      description: "Apply to multiple institutions with a single application. Save hours of work.",
-      color: "from-blue-500 to-cyan-500",
-    },
-    {
-      icon: <Shield className="h-8 w-8" />,
-      title: "Expert Guidance",
-      description: "Get expert advice and support throughout your application journey.",
-      color: "from-purple-500 to-pink-500",
-    },
-    {
-      icon: <TrendingUp className="h-8 w-8" />,
-      title: "Track & Optimize",
-      description: "Monitor your applications and get insights to improve your chances.",
-      color: "from-orange-500 to-red-500",
-    },
-  ];
+  const canvasRef   = useRef(null);
+  const contentRef  = useRef(null);
+  const cursorRef   = useRef(null);
+  const animRef     = useRef(null);
+  const particlesRef = useRef([]);
+  const isMobileRef = useRef(
+    typeof window !== "undefined"
+      ? window.innerWidth < 768 || "ontouchstart" in window
+      : false
+  );
 
-  const testimonials = [
-    {
-      name: "Sarah M.",
-      role: "Medical Student",
-      text: "TXI helped me secure my spot & funding for all 6 medical schools I applied to. The guidance was invaluable!",
-      avatar: "👩‍⚕️",
-    },
-    {
-      name: "James K.",
-      role: "Engineering Student",
-      text: "As a first-generation student, I had no idea how to navigate application portals. This platform made it simple.",
-      avatar: "👨‍🔬",
-    },
-    {
-      name: "Lerato P.",
-      role: "Commerce Graduate",
-      text: "The expert reviews caught errors in my applications I would have missed. Got courses that I qualify for at one Application without wasting money!",
-      avatar: "👩‍🎓",
-    },
-  ];
+  // ── Particle constellation ──────────────────────────────────────
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
 
-  const stats = [
-    { value: "95%", label: "Success Rate", icon: <CheckCircle /> },
-    { value: "2,500+", label: "Students Helped", icon: <Users /> },
-    { value: "R45M+", label: "University spot Secured", icon: <Award /> },
-    { value: "24/7", label: "Expert Support", icon: <Globe /> },
-  ];
+    function checkMobile() {
+      isMobileRef.current = window.innerWidth < 768 || "ontouchstart" in window;
+    }
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+      checkMobile();
+      const count = Math.floor((canvas.width * canvas.height) / (isMobileRef.current ? 14000 : 9000));
+      particlesRef.current = Array.from({ length: count }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.28,
+        vy: (Math.random() - 0.5) * 0.28,
+        r: Math.random() * 1.1 + 0.3,
+      }));
+    }
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const maxD = isMobileRef.current ? 95 : 130;
+      const ps   = particlesRef.current;
+      const lim  = isMobileRef.current ? 3 : ps.length;
+      for (let i = 0; i < ps.length; i++) {
+        const p = ps[i];
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < -10) p.x = canvas.width + 10;
+        if (p.x > canvas.width + 10) p.x = -10;
+        if (p.y < -10) p.y = canvas.height + 10;
+        if (p.y > canvas.height + 10) p.y = -10;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,0.38)"; ctx.fill();
+        let drawn = 0;
+        for (let j = i + 1; j < ps.length && drawn < lim; j++) {
+          const q = ps[j];
+          const dx = p.x - q.x, dy = p.y - q.y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < maxD) {
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+            ctx.strokeStyle = `rgba(129,140,248,${(1 - d / maxD) * 0.11})`;
+            ctx.lineWidth = 0.35; ctx.stroke(); drawn++;
+          }
+        }
+      }
+      animRef.current = requestAnimationFrame(draw);
+    }
+    resize(); draw();
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", () => setTimeout(resize, 300));
+    return () => {
+      window.removeEventListener("resize", resize);
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, []);
+
+  // ── Parallax + cursor glow ──────────────────────────────────────
+  useEffect(() => {
+    function move(x, y) {
+      const nx = (x / window.innerWidth) * 2 - 1;
+      const ny = (y / window.innerHeight) * 2 - 1;
+      const amp = isMobileRef.current ? 5 : 11;
+      if (contentRef.current)
+        contentRef.current.style.transform = `translate(${nx * amp}px,${ny * amp}px)`;
+      if (cursorRef.current) {
+        cursorRef.current.style.left = x + "px";
+        cursorRef.current.style.top  = y + "px";
+      }
+    }
+    const onMouse = (e) => move(e.clientX, e.clientY);
+    const onTouch = (e) => { if (e.touches.length > 0) move(e.touches[0].clientX, e.touches[0].clientY); };
+    document.addEventListener("mousemove", onMouse);
+    document.addEventListener("touchmove", onTouch, { passive: true });
+    return () => {
+      document.removeEventListener("mousemove", onMouse);
+      document.removeEventListener("touchmove", onTouch);
+    };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-50">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-emerald-100 bg-white/90 backdrop-blur-md">
-        <div className="container mx-auto px-6">
-          <div className="flex h-20 items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-500">
-                <BookOpen className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-emerald-900">TXI-Tertiary Express Interface</h1>
-                <p className="text-xs text-emerald-600">Smart Applications Solutions</p>
-              </div>
-            </div>
+    <div style={{
+      position: "relative", width: "100vw", height: "100dvh", overflow: "hidden",
+      fontFamily: "'Plus Jakarta Sans', Inter, system-ui, sans-serif",
+      background: "#06060b",
+      WebkitTapHighlightColor: "transparent",
+      WebkitFontSmoothing: "antialiased",
+      overscrollBehavior: "none",
+      touchAction: "manipulation",
+    }}>
 
-            <nav className="hidden items-center space-x-8 md:flex">
-              <a href="#features" className="font-medium text-emerald-700 hover:text-emerald-600">
-                Features
-              </a>
-              <a href="#how-it-works" className="font-medium text-emerald-700 hover:text-emerald-600">
-                How It Works
-              </a>
-              <a href="#testimonials" className="font-medium text-emerald-700 hover:text-emerald-600">
-                Success Stories
-              </a>
-              <a href="#pricing" className="font-medium text-emerald-700 hover:text-emerald-600">
-                Pricing
-              </a>
-            </nav>
+      {/* ── SA flag (full-screen base) ── */}
+      <div style={{ position: "absolute", inset: 0 }}>
+        <SAFlag />
+      </div>
 
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowRegister(false)}
-                className="hidden rounded-full px-6 py-2.5 font-medium text-emerald-700 hover:bg-emerald-50 md:block"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => setShowRegister(true)}
-                className="rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 px-6 py-2.5 font-medium text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300"
-              >
-                Get Started Free
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* ── Dark overlay: diagonal "/" — dark all the way, flag only reveals far right ── */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none", zIndex: 3,
+        background: "linear-gradient(70deg, rgba(4,4,10,0.97) 0%, rgba(4,4,10,0.97) 72%, rgba(4,4,10,0.88) 80%, rgba(4,4,10,0.40) 88%, rgba(4,4,10,0.04) 94%, rgba(4,4,10,0.0) 100%)",
+      }} />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-20 pb-32">
-        <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-gradient-to-br from-emerald-200 to-teal-200 opacity-50 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-br from-teal-200 to-emerald-200 opacity-50 blur-3xl" />
+      {/* ── Indigo depth accents ── */}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none",
+        background:
+          "radial-gradient(ellipse at 25% 20%, rgba(99,102,241,0.09) 0%, transparent 50%)," +
+          "radial-gradient(ellipse at 75% 80%, rgba(139,92,246,0.06) 0%, transparent 50%)",
+      }} />
 
-        <div className="container relative mx-auto px-6">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <div className="mb-6 inline-flex items-center rounded-full bg-emerald-100 px-4 py-1.5">
-                <Star className="mr-2 h-4 w-4 text-emerald-600" />
-                <span className="text-sm font-medium text-emerald-700">
-                  Trusted by 2,500+ South African Students
-                </span>
-              </div>
+      {/* ── Particle canvas ── */}
+      <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 2, opacity: 0.45 }} />
 
-              <h1 className="mb-6 text-5xl font-bold leading-tight text-emerald-900 lg:text-6xl">
-                Secure Your Future with{" "}
-                <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
-                  Smart Applications
-                </span>
-              </h1>
+      {/* ── Student image slot (far right) ── */}
+      <div className="m2c-students-container" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "36%", zIndex: 5, pointerEvents: "none", background: "#06060b" }}>
+        <img
+          src="/students.png"
+          alt=""
+          aria-hidden="true"
+          fetchPriority="high"
+          decoding="async"
+          className="m2c-students-img"
+          style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center" }}
+          onError={(e) => { e.currentTarget.parentElement.style.display = "none"; }}
+        />
+        {/* top + bottom edge fades to cover white bg */}
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none",
+          background: "linear-gradient(to bottom, #06060b 0%, transparent 12%, transparent 82%, #06060b 100%)" }} />
+        {/* right edge fade */}
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none",
+          background: "linear-gradient(to left, #06060b 0%, transparent 18%)" }} />
+      </div>
 
-              <p className="mb-8 text-xl text-emerald-700">
-                We match you with the perfect bursaries, handle your applications, and provide expert
-                guidance—all in one platform. Your dream education, funded.
-              </p>
+      {/* ── FREE badge ── */}
+      <div className="m2c-free-badge">
+        <span className="m2c-free-dot" />
+        FREE &bull; No sign up. No paywalls. Ever.
+      </div>
 
-              <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-                <button
-                  onClick={() => setShowRegister(true)}
-                  className="flex items-center justify-center rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 px-8 py-4 font-semibold text-white shadow-lg shadow-emerald-200 hover:shadow-xl hover:shadow-emerald-300"
-                >
-                  Get Started Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </button>
-                <button className="flex items-center justify-center rounded-full border-2 border-emerald-200 bg-white px-8 py-4 font-semibold text-emerald-700 hover:bg-emerald-50">
-                  <Play className="mr-2 h-5 w-5" />
-                  Watch Demo
-                </button>
-              </div>
+      {/* ── Hero content (centered, shifts up to make room for tiles) ── */}
+      <div
+        ref={contentRef}
+        className="m2c-hero"
+        style={{
+          position: "absolute", inset: 0, zIndex: 10,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          padding: "0 clamp(1.2rem, 4vw, 3rem)",
+          paddingBottom: "clamp(108px, 16vh, 148px)",
+          boxSizing: "border-box",
+          transition: "transform 0.2s ease-out",
+        }}
+      >
+        {/* Brand */}
+        <h1 className="m2c-brand">
+          <span className="m2c-matric">Matric</span>
+          <span className="m2c-two">2</span>
+          <span className="m2c-campus">Campus</span>
+        </h1>
 
-              {/* Stats */}
-              <div className="mt-12 grid grid-cols-2 gap-6 sm:grid-cols-4">
-                {stats.map((stat, index) => (
-                  <div key={index} className="text-center">
-                    <div className="mb-2 flex items-center justify-center text-2xl font-bold text-emerald-900">
-                      {stat.icon}
-                      <span className="ml-2">{stat.value}</span>
-                    </div>
-                    <div className="text-sm text-emerald-600">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* Slogan */}
+        <p className="m2c-slogan">
+          Know where <span className="m2c-gold">you stand.</span>
+          <br />
+          Discover where <span className="m2c-green">you could go.</span>
+        </p>
 
-            {/* Auth Card */}
-            <div className="rounded-3xl bg-white p-8 shadow-2xl shadow-emerald-100">
-              <div className="mb-8 flex space-x-4 border-b border-emerald-100">
-                <button
-                  onClick={() => setShowRegister(false)}
-                  className={`pb-4 font-semibold ${!showRegister ? "border-b-2 border-emerald-600 text-emerald-900" : "text-emerald-500"}`}
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => setShowRegister(true)}
-                  className={`pb-4 font-semibold ${showRegister ? "border-b-2 border-emerald-600 text-emerald-900" : "text-emerald-500"}`}
-                >
-                  Create Account
-                </button>
-              </div>
+        {/* CTA */}
+        <button className="m2c-btn" onClick={() => setShowAuth(true)}>
+          Start Quiz&nbsp;<span className="m2c-arrow">→</span>
+        </button>
 
-              {showRegister ? (
-                <Register onLoginClick={() => setShowRegister(false)} />
-              ) : (
-                <Login onRegisterClick={() => setShowRegister(true)} />
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-20 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-4xl font-bold text-emerald-900">
-              Everything You Need to Secure Your 
-            </h2>
-            <p className="mx-auto max-w-2xl text-lg text-emerald-600">
-              Our platform combines technology with human expertise to maximize your bursary success.
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="group cursor-pointer rounded-2xl border border-emerald-100 bg-white p-6 transition-all hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-50"
-                onMouseEnter={() => setActiveFeature(index)}
-              >
-                <div
-                  className={`mb-6 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${feature.color}`}
-                >
-                  <div className="text-white">{feature.icon}</div>
-                </div>
-                <h3 className="mb-3 text-xl font-bold text-emerald-900">{feature.title}</h3>
-                <p className="text-emerald-600">{feature.description}</p>
-              </div>
+        {/* Social proof */}
+        <div className="m2c-proof">
+          <div className="m2c-avatars">
+            {["#6366f1", "#007A4D", "#FFB612", "#DE3831"].map((c, i) => (
+              <div key={i} className="m2c-avatar" style={{ background: c }} />
             ))}
           </div>
+          <span>Join 250K+ students exploring their future</span>
         </div>
-      </section>
+      </div>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="py-20 bg-gradient-to-b from-emerald-50 to-white">
-        <div className="container mx-auto px-6">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-4xl font-bold text-emerald-900">How It Works</h2>
-            <p className="mx-auto max-w-2xl text-lg text-emerald-600">
-              Simple steps from registration to secured funding
-            </p>
-          </div>
-
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-1/2 top-0 hidden h-full w-0.5 -translate-x-1/2 bg-gradient-to-b from-emerald-300 to-teal-300 md:block" />
-
-            {/* Steps */}
-            {[
-              {
-                step: "01",
-                title: "Create Your Profile",
-                description: "Tell us about your academics, interests, and financial situation.",
-                icon: "📝",
-              },
-              {
-                step: "02",
-                title: "Get Smart Matches",
-                description: "Our Advanced smart tools finds courses that match your profile perfectly.",
-                icon: "🎯",
-              },
-              {
-                step: "03",
-                title: "Expert Application Review",
-                description: "Our experts review and optimize every application before submission.",
-                icon: "👨‍🏫",
-              },
-              {
-                step: "04",
-                title: "Track & Celebrate",
-                description: "Monitor progress and celebrate when you secure your tertiary spot!",
-                icon: "🎉",
-              },
-            ].map((step, index) => (
-              <div
-                key={index}
-                className={`relative mb-12 flex flex-col items-center md:flex-row ${index % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"}`}
-              >
-                {/* Step content */}
-                <div className="md:w-1/2">
-                  <div
-                    className={`rounded-2xl bg-white p-8 shadow-xl shadow-emerald-100 ${index % 2 === 0 ? "md:mr-12" : "md:ml-12"}`}
-                  >
-                    <div className="mb-4 flex items-center">
-                      <div className="mr-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-2xl">
-                        {step.icon}
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold text-emerald-600">STEP {step.step}</div>
-                        <h3 className="text-2xl font-bold text-emerald-900">{step.title}</h3>
-                      </div>
-                    </div>
-                    <p className="text-emerald-600">{step.description}</p>
-                  </div>
-                </div>
-
-                {/* Timeline dot */}
-                <div className="absolute left-1/2 top-1/2 z-10 hidden h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white bg-emerald-500 shadow-lg md:block" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section id="testimonials" className="py-20 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-4xl font-bold text-emerald-900">Student Success Stories</h2>
-            <p className="mx-auto max-w-2xl text-lg text-emerald-600">
-              Hear from students who secured their dream education with our help
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-3">
-            {testimonials.map((testimonial, index) => (
-              <div
-                key={index}
-                className="rounded-2xl border border-emerald-100 bg-gradient-to-b from-white to-emerald-50 p-8"
-              >
-                <div className="mb-6 flex items-center">
-                  <div className="mr-4 text-4xl">{testimonial.avatar}</div>
-                  <div>
-                    <h4 className="font-bold text-emerald-900">{testimonial.name}</h4>
-                    <p className="text-sm text-emerald-600">{testimonial.role}</p>
-                  </div>
-                </div>
-                <p className="text-emerald-700">{testimonial.text}</p>
-                <div className="mt-6 flex text-emerald-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 fill-current" />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-emerald-600 to-teal-500">
-        <div className="container mx-auto px-6 text-center">
-          <h2 className="mb-6 text-4xl font-bold text-white">
-            Ready to Secure Your Education & Future?
-          </h2>
-          <p className="mx-auto mb-10 max-w-2xl text-xl text-emerald-100">
-            Join thousands of successful students today. TXI gives learners a better chance for a brighter future
-          </p>
-          <button
-            onClick={() => setShowRegister(true)}
-            className="rounded-full bg-white px-10 py-4 font-semibold text-emerald-700 shadow-2xl hover:bg-emerald-50"
-          >
-            Start Your Free Trial Now
-            <ArrowRight className="ml-2 inline h-5 w-5" />
-          </button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-emerald-900 py-12">
-        <div className="container mx-auto px-6">
-          <div className="grid gap-8 md:grid-cols-4">
-            <div>
-              <div className="mb-6 flex items-center">
-                <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-white">
-                  <BookOpen className="h-6 w-6 text-emerald-900" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">TXI-Tertiary eXpress Interface</h3>
-                  <p className="text-sm text-emerald-300">Smart Applications Solutions</p>
-                </div>
-              </div>
-              <p className="text-emerald-300">
-                Empowering South African students to access quality education through smart applications
-                solutions.
-              </p>
+      {/* ── Feature tiles (bottom strip) ── */}
+      <div className="m2c-tiles">
+        {FEATURES.map(({ Icon, color, title, desc }, i) => (
+          <div key={i} className="m2c-tile" style={{ "--delay": `${1.5 + i * 0.1}s` }}>
+            <div className="m2c-tile-icon" style={{ background: color }}>
+              <Icon size={15} color="#fff" strokeWidth={2.5} />
             </div>
-
-            <div>
-              <h4 className="mb-4 font-semibold text-white">Company</h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="text-emerald-300 hover:text-white">
-                    About Us
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-emerald-300 hover:text-white">
-                    Careers
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-emerald-300 hover:text-white">
-                    Press
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-emerald-300 hover:text-white">
-                    Blog
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="mb-4 font-semibold text-white">Support</h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="text-emerald-300 hover:text-white">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-emerald-300 hover:text-white">
-                    Contact Us
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-emerald-300 hover:text-white">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="text-emerald-300 hover:text-white">
-                    Terms of Service
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="mb-4 font-semibold text-white">Contact</h4>
-              <ul className="space-y-3">
-                <li className="flex items-center text-emerald-300">
-                  <Mail className="mr-3 h-5 w-5" />
-                  help@txibursary.co.za
-                </li>
-                <li className="flex items-center text-emerald-300">
-                  <Phone className="mr-3 h-5 w-5" />
-                  0800 123 456
-                </li>
-                <li className="flex items-center text-emerald-300">
-                  <MapPin className="mr-3 h-5 w-5" />
-                  Durban, South Africa
-                </li>
-              </ul>
+            <div className="m2c-tile-body">
+              <strong>{title}</strong>
+              <p>{desc}</p>
             </div>
           </div>
+        ))}
+      </div>
 
-          <div className="mt-12 border-t border-emerald-800 pt-8 text-center">
-            <p className="text-emerald-400">
-              © {new Date().getFullYear()} TXI-Tertiary eXpress Interface . All rights reserved.
-            </p>
+      {/* ── Cursor glow ── */}
+      <div ref={cursorRef} className="m2c-cursor" />
+
+      {/* ── Auth modal ── */}
+      {showAuth && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setShowAuth(false); }}
+          style={{
+            position: "absolute", inset: 0, zIndex: 50,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(0,0,0,0.58)",
+            backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
+            padding: "1rem",
+          }}
+        >
+          <div style={{
+            position: "relative", width: "100%", maxWidth: "26rem",
+            background: "rgba(12,12,22,0.88)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "1.5rem", padding: "2rem",
+            backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
+            boxShadow: "0 24px 60px rgba(0,0,0,0.65)",
+          }}>
+            <button onClick={() => setShowAuth(false)} style={{
+              position: "absolute", top: "1rem", right: "1.25rem",
+              background: "none", border: "none",
+              color: "rgba(255,255,255,0.45)", fontSize: "1.75rem",
+              cursor: "pointer", lineHeight: 1, fontWeight: 300,
+            }}>×</button>
+
+            <div style={{
+              display: "flex", gap: "1.5rem",
+              marginBottom: "1.5rem",
+              borderBottom: "1px solid rgba(255,255,255,0.1)",
+              paddingBottom: "0.75rem",
+            }}>
+              {[{ label: "Create Account", mode: "register" }, { label: "Sign In", mode: "login" }].map(({ label, mode }) => (
+                <button key={mode} onClick={() => setAuthMode(mode)} style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  fontWeight: 700, fontSize: "0.95rem",
+                  color: authMode === mode ? "#ffffff" : "rgba(255,255,255,0.32)",
+                  borderBottom: authMode === mode ? "2px solid #6366f1" : "2px solid transparent",
+                  paddingBottom: "0.2rem", transition: "color 0.2s", fontFamily: "inherit",
+                }}>{label}</button>
+              ))}
+            </div>
+
+            {authMode === "register"
+              ? <Register onLoginClick={() => setAuthMode("login")} />
+              : <Login    onRegisterClick={() => setAuthMode("register")} />
+            }
           </div>
         </div>
-      </footer>
+      )}
+
+      {/* ── All scoped styles ── */}
+      <style>{`
+        /* ── Brand name ── */
+        .m2c-brand {
+          font-size: clamp(2.8rem, 9.5vw, 6.5rem);
+          font-weight: 800;
+          letter-spacing: -0.04em;
+          line-height: 1.05;
+          margin: 0;
+          user-select: none;
+          opacity: 0;
+          transform: translateY(30px);
+          animation: m2cUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+          display: flex; flex-wrap: wrap;
+          align-items: center; justify-content: center;
+        }
+        .m2c-matric {
+          background: linear-gradient(135deg,#d4a574 0%,#c4956a 15%,#e8c99b 30%,#b8875e 45%,#d4a574 60%,#c4956a 75%,#e8c99b 90%,#b8875e 100%);
+          background-size: 300% 300%;
+          -webkit-background-clip: text; background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: m2cTextureShift 8s ease-in-out infinite;
+          filter: drop-shadow(0 2px 6px rgba(180,130,90,0.5));
+        }
+        .m2c-two {
+          color: #4f6eb3; -webkit-text-fill-color: #4f6eb3;
+          text-shadow: 0 2px 10px rgba(79,110,179,0.55);
+          margin: 0 -0.01em;
+        }
+        .m2c-campus {
+          background-image: url('/sa-flag.svg');
+          background-size: cover; background-position: center;
+          -webkit-background-clip: text; background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 2px 8px rgba(0,0,0,0.65)) brightness(1.1);
+          animation: m2cFlagGlow 4s ease-in-out infinite;
+        }
+
+        /* ── Slogan ── */
+        .m2c-slogan {
+          font-size: clamp(1.1rem, 3vw, 2rem);
+          font-weight: 500;
+          line-height: 1.45;
+          text-align: center;
+          color: rgba(255,255,255,0.88);
+          margin: clamp(0.7rem, 1.6vh, 1.3rem) 0 0 0;
+          user-select: none;
+          opacity: 0; transform: translateY(20px);
+          animation: m2cUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards;
+        }
+        .m2c-gold  { color: #FFB612; font-weight: 700; }
+        .m2c-green { color: #4ade80; font-weight: 700; }
+
+        /* ── CTA button ── */
+        .m2c-btn {
+          position: relative;
+          margin-top: clamp(1.5rem, 3.2vh, 2.2rem);
+          padding: clamp(0.78rem, 2vh, 1rem) clamp(1.9rem, 5vw, 3rem);
+          font-family: inherit;
+          font-size: clamp(0.95rem, 2.3vw, 1.15rem);
+          font-weight: 700;
+          letter-spacing: 0.03em;
+          color: #ffffff;
+          background: linear-gradient(135deg, #6366f1 0%, #818cf8 50%, #6366f1 100%);
+          background-size: 200% 200%;
+          border: none; border-radius: 12px;
+          cursor: pointer; white-space: nowrap; outline: none;
+          -webkit-tap-highlight-color: transparent;
+          box-shadow: 0 4px 28px rgba(99,102,241,0.45), 0 1px 6px rgba(0,0,0,0.25);
+          transition: transform 0.32s cubic-bezier(0.2,0.9,0.4,1), box-shadow 0.32s;
+          opacity: 0; transform: translateY(20px);
+          animation: m2cUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.72s forwards,
+                     m2cBgShift 6s ease infinite;
+          overflow: hidden;
+        }
+        /* shimmer sweep */
+        .m2c-btn::before {
+          content: '';
+          position: absolute; inset: 0;
+          background: linear-gradient(90deg,transparent 20%,rgba(255,255,255,0.18) 50%,transparent 80%);
+          background-size: 200% 100%;
+          animation: m2cShimmer 3.2s ease-in-out 2.8s infinite;
+          pointer-events: none; border-radius: inherit;
+        }
+        .m2c-btn::after {
+          content: ''; position: absolute; inset: 0;
+          background: linear-gradient(135deg,rgba(255,255,255,0.1) 0%,transparent 50%,rgba(255,255,255,0.05) 100%);
+          border-radius: inherit; pointer-events: none;
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .m2c-btn:hover {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 12px 40px rgba(99,102,241,0.58), 0 2px 8px rgba(0,0,0,0.3) !important;
+          }
+          .m2c-btn:hover .m2c-arrow { transform: translateX(6px); }
+        }
+        .m2c-btn:active { transform: scale(0.96) !important; }
+        .m2c-arrow { display: inline-block; transition: transform 0.28s ease; }
+
+        /* ── Social proof ── */
+        .m2c-proof {
+          display: flex; align-items: center; gap: 0.7rem;
+          margin-top: 1.1rem;
+          opacity: 0; animation: m2cUp 0.7s ease 1.05s forwards;
+        }
+        .m2c-avatars { display: flex; }
+        .m2c-avatar {
+          width: 26px; height: 26px; border-radius: 50%;
+          border: 2px solid rgba(12,12,24,0.9);
+          margin-left: -7px;
+        }
+        .m2c-avatar:first-child { margin-left: 0; }
+        .m2c-proof span {
+          font-size: clamp(0.7rem, 1.35vw, 0.8rem);
+          color: rgba(255,255,255,0.48);
+          font-weight: 400; letter-spacing: 0.01em;
+        }
+
+        /* ── FREE badge ── */
+        .m2c-free-badge {
+          position: absolute;
+          top: clamp(1rem, 2.4vh, 1.6rem);
+          left: clamp(1.2rem, 3vw, 2rem);
+          z-index: 20;
+          display: flex; align-items: center; gap: 0.45rem;
+          background: rgba(8,8,18,0.62);
+          backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 100px;
+          padding: 0.3rem 0.8rem;
+          font-size: clamp(0.66rem, 1.25vw, 0.74rem);
+          font-weight: 500;
+          color: rgba(255,255,255,0.7);
+          letter-spacing: 0.02em;
+          opacity: 0;
+          animation: m2cFadeDown 0.7s ease 0.1s forwards;
+        }
+        .m2c-free-dot {
+          width: 6px; height: 6px; border-radius: 50%;
+          background: #4ade80; flex-shrink: 0;
+          animation: m2cDotPulse 2s ease-in-out infinite;
+        }
+
+        /* ── Student image (fade-in from right, left-edge fade) ── */
+        .m2c-students-img {
+          mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 20%, black 42%);
+          -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 20%, black 42%);
+          opacity: 0;
+          animation: m2cImgReveal 1.3s cubic-bezier(0.16,1,0.3,1) 0.55s forwards;
+        }
+
+        /* ── Feature tiles ── */
+        .m2c-tiles {
+          position: absolute; bottom: 0; left: 0; right: 0;
+          z-index: 20;
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: clamp(0.45rem, 0.9vw, 0.7rem);
+          padding: 0 clamp(1rem, 2.2vw, 1.75rem) clamp(0.7rem, 1.8vh, 1.2rem);
+        }
+        .m2c-tile {
+          background: rgba(7,7,16,0.7);
+          backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 12px;
+          padding: clamp(0.6rem, 1.4vw, 0.85rem) clamp(0.7rem, 1.4vw, 1rem);
+          display: flex; gap: 0.65rem; align-items: flex-start;
+          opacity: 0; transform: translateY(22px);
+          animation: m2cUp 0.65s cubic-bezier(0.16,1,0.3,1) var(--delay) forwards;
+          transition: transform 0.24s ease, border-color 0.24s ease,
+                      box-shadow 0.24s ease, background 0.24s ease;
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .m2c-tile:hover {
+            transform: translateY(-3px) !important;
+            border-color: rgba(255,255,255,0.14);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.38);
+            background: rgba(12,12,26,0.8);
+          }
+        }
+        .m2c-tile-icon {
+          width: 30px; height: 30px; border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0; opacity: 0.92;
+        }
+        .m2c-tile-body strong {
+          display: block;
+          font-size: clamp(0.66rem, 1.15vw, 0.76rem);
+          font-weight: 700; color: rgba(255,255,255,0.88);
+          margin-bottom: 0.18rem;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .m2c-tile-body p {
+          margin: 0;
+          font-size: clamp(0.58rem, 1vw, 0.66rem);
+          line-height: 1.5; color: rgba(200,200,218,0.55);
+          font-weight: 300;
+          display: -webkit-box;
+          -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+
+        /* ── Cursor glow ── */
+        .m2c-cursor {
+          position: fixed; pointer-events: none; z-index: 9999;
+          width: 42px; height: 42px; border-radius: 50%;
+          background: radial-gradient(circle, rgba(99,102,241,0.52) 0%, transparent 72%);
+          mix-blend-mode: screen; transform: translate(-50%,-50%);
+          opacity: 0; transition: opacity 0.3s;
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .m2c-cursor { opacity: 1 !important; }
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 600px) {
+          /* Push content to top third — kills dead top zone */
+          .m2c-hero {
+            justify-content: flex-start !important;
+            padding-top: 10vh !important;
+            padding-bottom: 175px !important;
+          }
+          /* Tiles 2-col, compact */
+          .m2c-tiles {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 0.4rem !important;
+            padding: 0 0.85rem 1rem !important;
+          }
+          .m2c-tile { padding: 0.55rem 0.65rem !important; }
+          /* Student: wider, fills the stage area — visible but doesn't compete with text */
+          .m2c-students-container { width: 78% !important; }
+          .m2c-students-img {
+            animation: m2cImgReveal 1.3s cubic-bezier(0.16,1,0.3,1) 0.55s forwards !important;
+            mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.14) 22%, rgba(0,0,0,0.78) 58%) !important;
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.14) 22%, rgba(0,0,0,0.78) 58%) !important;
+          }
+          /* Touch-friendly button */
+          .m2c-btn { min-height: 46px !important; }
+          /* Scale brand slightly for narrow screens */
+          .m2c-brand { font-size: clamp(2.2rem, 10.5vw, 3rem) !important; }
+        }
+        @media (max-width: 340px) {
+          .m2c-tiles { grid-template-columns: 1fr !important; }
+          .m2c-hero  { padding-bottom: 280px !important; }
+        }
+
+        /* ── Landscape mobile ── */
+        @media (max-width: 900px) and (orientation: landscape) {
+          .m2c-brand  { font-size: clamp(1.9rem, 7vw, 3.4rem) !important; }
+          .m2c-slogan { font-size: clamp(0.72rem, 2vw, 1rem) !important; margin-top: 0.25rem !important; }
+          .m2c-btn    { margin-top: 0.65rem !important; }
+          .m2c-tile   { padding: 0.45rem 0.6rem !important; }
+        }
+
+        /* ── iOS safe areas ── */
+        @supports (padding: env(safe-area-inset-bottom)) {
+          .m2c-tiles {
+            padding-bottom: calc(clamp(0.7rem, 1.8vh, 1.2rem) + env(safe-area-inset-bottom));
+          }
+        }
+
+        /* ── Keyframes ── */
+        @keyframes m2cUp {
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes m2cFadeDown {
+          from { opacity: 0; transform: translateY(-12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes m2cImgReveal {
+          from { opacity: 0; transform: translateX(22px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes m2cTextureShift {
+          0%, 100% { background-position: 0% 50%; }
+          50%       { background-position: 100% 50%; }
+        }
+        @keyframes m2cFlagGlow {
+          0%, 100% { filter: drop-shadow(0 2px 8px rgba(0,0,0,0.65)) brightness(1.1); }
+          50%       { filter: drop-shadow(0 2px 14px rgba(255,255,255,0.28)) brightness(1.22); }
+        }
+        @keyframes m2cBgShift {
+          0%, 100% { background-position: 0% 50%; }
+          50%       { background-position: 100% 50%; }
+        }
+        @keyframes m2cDotPulse {
+          0%, 100% { opacity: 0.45; }
+          50%       { opacity: 1; }
+        }
+        @keyframes m2cShimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </div>
   );
 }
-
-// Custom Play icon component
-const Play = (props) => (
-  <svg
-    {...props}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polygon points="5 3 19 12 5 21 5 3" />
-  </svg>
-);

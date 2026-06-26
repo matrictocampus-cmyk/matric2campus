@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
+import Topbar from "./TopBar";
 
 export default function Layout({ profile }) {
   const [open, setOpen] = useState(true); // true = expanded

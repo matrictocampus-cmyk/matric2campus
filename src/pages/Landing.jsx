@@ -133,7 +133,7 @@ export default function Landing() {
       </div>
 
       {/* ── Dark overlay: diagonal "/" — dark all the way, flag only reveals far right ── */}
-      <div style={{
+      <div className="m2c-overlay" style={{
         position: "absolute", inset: 0, pointerEvents: "none", zIndex: 3,
         background: "linear-gradient(70deg, rgba(4,4,10,0.97) 0%, rgba(4,4,10,0.97) 72%, rgba(4,4,10,0.88) 80%, rgba(4,4,10,0.40) 88%, rgba(4,4,10,0.04) 94%, rgba(4,4,10,0.0) 100%)",
       }} />
@@ -504,11 +504,28 @@ export default function Landing() {
 
         /* ── Mobile ── */
         @media (max-width: 600px) {
-          /* Push content to top third — kills dead top zone */
+          /* Brand + slogan stay at top; button centered via margin-top calc */
           .m2c-hero {
             justify-content: flex-start !important;
-            padding-top: 10vh !important;
+            padding-top: 8vh !important;
             padding-bottom: 175px !important;
+          }
+          /* Dark top (brand readable) → vivid middle (flag shows) → dark bottom (button readable) */
+          .m2c-overlay {
+            background: linear-gradient(
+              to bottom,
+              rgba(4,4,10,0.80) 0%,
+              rgba(4,4,10,0.68) 16%,
+              rgba(4,4,10,0.38) 30%,
+              rgba(4,4,10,0.38) 46%,
+              rgba(4,4,10,0.76) 60%,
+              rgba(4,4,10,0.90) 100%
+            ) !important;
+          }
+          /* Pull button to vertical center of the screen */
+          .m2c-btn {
+            margin-top: calc(40vh - 118px) !important;
+            min-height: 46px !important;
           }
           /* Tiles 2-col, compact */
           .m2c-tiles {
@@ -517,17 +534,18 @@ export default function Landing() {
             padding: 0 0.85rem 1rem !important;
           }
           .m2c-tile { padding: 0.55rem 0.65rem !important; }
-          /* Student: wider, fills the stage area — visible but doesn't compete with text */
-          .m2c-students-container { width: 78% !important; }
+          /* Student behind overlay — same gradient treatment as the flag */
+          .m2c-students-container { width: 78% !important; z-index: 2 !important; }
           .m2c-students-img {
             animation: m2cImgReveal 1.3s cubic-bezier(0.16,1,0.3,1) 0.55s forwards !important;
-            mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.14) 22%, rgba(0,0,0,0.78) 58%) !important;
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.14) 22%, rgba(0,0,0,0.78) 58%) !important;
+            mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.14) 22%, rgba(0,0,0,0.92) 58%) !important;
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.14) 22%, rgba(0,0,0,0.92) 58%) !important;
           }
-          /* Touch-friendly button */
-          .m2c-btn { min-height: 46px !important; }
           /* Scale brand slightly for narrow screens */
           .m2c-brand { font-size: clamp(2.2rem, 10.5vw, 3rem) !important; }
+          /* Text shadow for readability over lighter middle zone */
+          .m2c-slogan { text-shadow: 0 1px 10px rgba(0,0,0,0.88) !important; }
+          .m2c-proof span { text-shadow: 0 1px 8px rgba(0,0,0,0.88) !important; }
         }
         @media (max-width: 340px) {
           .m2c-tiles { grid-template-columns: 1fr !important; }

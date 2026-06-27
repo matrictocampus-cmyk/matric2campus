@@ -33,32 +33,32 @@ const GRADES = [
 ];
 
 const CERTAINTY_OPTIONS = [
-  { id: "certain",   label: "I know exactly what I want to do",  sub: "You're focused. We'll help you go deeper." },
-  { id: "exploring", label: "I have a few ideas but I'm not sure", sub: "That's the most common answer — you're not alone." },
-  { id: "unsure",    label: "I'm completely open to exploring",    sub: "Perfect. That's exactly why you're here." },
+  { id: "certain",   label: "I know exactly what I want to do",    sub: "You're focused. We'll help you go deeper." },
+  { id: "exploring", label: "I have a few ideas but I'm not sure", sub: "That's the most common answer. You're not alone." },
+  { id: "unsure",    label: "I'm completely open to exploring",     sub: "Perfect. That's exactly why you're here." },
 ];
 
 const FINANCIAL_OPTIONS = [
-  { id: "bursary", label: "I need a bursary or scholarship",     icon: "🏆" },
-  { id: "family",  label: "My family can help fund my studies",   icon: "🏠" },
-  { id: "loan",    label: "I'm considering a student loan",       icon: "🏦" },
-  { id: "unsure",  label: "I'm not sure yet",                     icon: "🤔" },
+  { id: "bursary", label: "I need a bursary or scholarship"   },
+  { id: "family",  label: "My family can help fund my studies" },
+  { id: "loan",    label: "I'm considering a student loan"     },
+  { id: "unsure",  label: "I'm not sure yet"                   },
 ];
 
 const STUDY_PREFS = [
-  { id: "fulltime",  label: "Full-time on campus",   icon: "🏛️" },
-  { id: "parttime",  label: "Part-time",              icon: "📅" },
-  { id: "online",    label: "Online / Distance",      icon: "💻" },
-  { id: "flexible",  label: "Flexible / Hybrid",      icon: "🔄" },
+  { id: "fulltime", label: "Full-time on campus"  },
+  { id: "parttime", label: "Part-time"             },
+  { id: "online",   label: "Online / Distance"     },
+  { id: "flexible", label: "Flexible / Hybrid"     },
 ];
 
 const CHALLENGE_OPTIONS = [
-  { id: "bursary",     label: "Finding bursaries and funding I qualify for",              icon: "🏆" },
-  { id: "eligibility", label: "Knowing which courses and universities I can get into",    icon: "📊" },
-  { id: "applications",label: "Actually getting my applications done and submitted",      icon: "📝" },
-  { id: "career",      label: "Figuring out which career is the right fit for me",       icon: "🎯" },
-  { id: "options",     label: "Understanding all my options after matric",                icon: "🗺️" },
-  { id: "marks",       label: "What to do if my current marks aren't strong enough",     icon: "📈" },
+  { id: "bursary",      label: "Finding bursaries and funding I qualify for"             },
+  { id: "eligibility",  label: "Knowing which courses and universities I can get into"   },
+  { id: "applications", label: "Actually getting my applications done and submitted"     },
+  { id: "career",       label: "Figuring out which career is the right fit for me"      },
+  { id: "options",      label: "Understanding all my options after matric"               },
+  { id: "marks",        label: "What to do if my current marks aren't strong enough"    },
 ];
 
 const MOTIVATION_OPTIONS = [
@@ -69,6 +69,29 @@ const MOTIVATION_OPTIONS = [
   { id: "impact",   label: "Make a real difference in my community" },
   { id: "freedom",  label: "Become financially independent as fast as possible" },
 ];
+
+const TERM_OPTIONS = [
+  { id: 1, label: "Term 1", period: "Jan – Mar" },
+  { id: 2, label: "Term 2", period: "Apr – Jun" },
+  { id: 3, label: "Term 3", period: "Jul – Sep" },
+  { id: 4, label: "Term 4", period: "Oct – Nov" },
+];
+
+const TERM_MESSAGES = {
+  1: {
+    card: "You have three more terms ahead. These are a solid baseline to build from.",
+    hype: "You're early in the year. Three full terms ahead of you — that's plenty of time to push these marks higher. Come back after Term 2 and Term 3 to keep your recommendations up to date. Your Term 4 results are what lock everything in.",
+  },
+  2: {
+    card: "Halfway through the year. There's real room to improve before the final term.",
+    hype: "Halfway there. Your Term 2 results tell us a lot, but universities look at Term 4. Two more terms to move these numbers up. Come back and update your marks as the year goes on.",
+  },
+  3: {
+    card: "One term left. Come back after Term 4 to lock in your final results.",
+    hype: "One term to go. This is the stretch that matters most. Come back after Term 4 with your final results and we'll give you the most accurate recommendations possible.",
+  },
+  4: null,
+};
 
 // ─── Shared UI primitives ─────────────────────────────────────────────────────
 function ScreenLabel({ children }) {
@@ -189,6 +212,7 @@ const INITIAL = {
   university: "", financial: "", studyPref: "",
   challenges: [], motivation: "",
   wantsPersonalisation: null, subjects: [], marks: {},
+  term: null,
 };
 
 export default function OnboardingFlow() {
@@ -203,12 +227,14 @@ export default function OnboardingFlow() {
   const [submitError, setSubmitError] = useState("");
   const [done, setDone] = useState(false);
   const [subjectsDone, setSubjectsDone] = useState(false);
+  const [firstNameError, setFirstNameError] = useState("");
   const inputRef = useRef(null);
 
   const set = useCallback((key, val) => setAnswers(a => ({ ...a, [key]: val })), []);
 
   const personality = computePersonality(answers.interests);
   const aps = computeAPS(answers.subjects.map(s => ({ subject: s, mark: answers.marks[s] ?? 0 })));
+  const termMsg = answers.term ? TERM_MESSAGES[answers.term] : null;
 
   const SCREENS = [
     { id: "firstName" },
@@ -224,7 +250,7 @@ export default function OnboardingFlow() {
     { id: "challenges" },
     { id: "motivation" },
     { id: "personalise" },
-    ...(answers.wantsPersonalisation ? [{ id: "subjects" }] : []),
+    ...(answers.wantsPersonalisation ? [{ id: "term" }, { id: "subjects" }] : []),
     { id: "personality" },
     { id: "password" },
   ];
@@ -235,7 +261,10 @@ export default function OnboardingFlow() {
   function canAdvance() {
     const a = answers;
     switch (currentScreen.id) {
-      case "firstName":   return a.firstName.trim().length > 0;
+      case "firstName":   {
+        const trimmed = a.firstName.trim();
+        return trimmed.length > 0 && !/\s/.test(trimmed);
+      }
       case "lastName":    return a.lastName.trim().length > 0;
       case "grade":       return !!a.grade;
       case "province":    return !!a.province;
@@ -248,6 +277,7 @@ export default function OnboardingFlow() {
       case "challenges":  return a.challenges.length > 0;
       case "motivation":  return !!a.motivation;
       case "personalise": return a.wantsPersonalisation !== null;
+      case "term":        return a.term !== null;
       case "subjects":    return subjectsDone;
       case "personality": return true;
       case "password":    return password.length >= 6;
@@ -256,6 +286,14 @@ export default function OnboardingFlow() {
   }
 
   function goNext() {
+    if (currentScreen.id === "firstName") {
+      const trimmed = answers.firstName.trim();
+      if (/\s/.test(trimmed)) {
+        setFirstNameError("Please enter your first name only. If you have a double-barrelled name like Mary-Jane, use a hyphen.");
+        return;
+      }
+      setFirstNameError("");
+    }
     if (!canAdvance()) return;
     setDirection("forward");
     setAnimKey(k => k + 1);
@@ -332,10 +370,10 @@ export default function OnboardingFlow() {
         support_needed: answers.challenges,
         personality_type: personality.type,
         personality_summary: personality.summary,
+        results_term: answers.term,
         completed_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
 
-      // Fire welcome email (non-blocking — don't await, don't fail signup on error)
       supabase.functions.invoke("send-welcome-email", {
         body: {
           name: answers.firstName,
@@ -359,13 +397,17 @@ export default function OnboardingFlow() {
     }
   }
 
-  // ─── Email confirmed screen ───────────────────────────────────────────────
+  // ─── Confirmation screen ──────────────────────────────────────────────────
   if (done) {
     return (
       <div style={{ minHeight: "100vh", background: T.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", textAlign: "center", fontFamily: "Inter, system-ui, sans-serif" }}>
-        <div style={{ fontSize: 56, marginBottom: 24 }}>📧</div>
+        <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(99,102,241,0.15)", border: `1.5px solid ${T.borderActive}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
+          </svg>
+        </div>
         <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.4rem)", fontWeight: 800, color: T.textPrimary, marginBottom: 12 }}>
-          Check your email
+          Check your inbox
         </h1>
         <p style={{ color: T.textSecondary, fontSize: "1.05rem", maxWidth: 380, marginBottom: 8, lineHeight: 1.6 }}>
           We sent a confirmation link to <span style={{ color: T.textPrimary, fontWeight: 600 }}>{answers.email}</span>.
@@ -373,15 +415,18 @@ export default function OnboardingFlow() {
         <p style={{ color: T.textMuted, fontSize: "0.9rem", maxWidth: 340, marginBottom: 32, lineHeight: 1.6 }}>
           Click the link, then come back to sign in and view your personalised roadmap.
         </p>
-        <div style={{ background: T.surface, borderRadius: 16, padding: "20px 28px", maxWidth: 320, width: "100%", marginBottom: 28, border: `1px solid ${T.border}` }}>
-          <p style={{ fontSize: 12, color: T.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>Your personality type</p>
-          <p style={{ fontSize: "1.6rem", fontWeight: 800, color: T.textPrimary }}>
-            {personality.emoji} {personality.type}
-          </p>
-          <p style={{ fontSize: "0.85rem", color: T.accentLight, marginTop: 4, fontStyle: "italic" }}>
-            "{personality.tagline}"
-          </p>
+        <div style={{ background: T.surface, borderRadius: 16, padding: "20px 28px", maxWidth: 320, width: "100%", marginBottom: 28, border: `1px solid ${T.border}`, textAlign: "left" }}>
+          <p style={{ fontSize: 11, color: T.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Your personality type</p>
+          <p style={{ fontSize: "1.6rem", fontWeight: 800, color: T.textPrimary }}>{personality.type}</p>
+          <p style={{ fontSize: "0.85rem", color: T.accentLight, marginTop: 4, fontStyle: "italic" }}>"{personality.tagline}"</p>
         </div>
+        {termMsg && (
+          <div style={{ background: "rgba(255,182,18,0.08)", border: "1px solid rgba(255,182,18,0.25)", borderRadius: 12, padding: "14px 20px", maxWidth: 340, width: "100%", marginBottom: 24, textAlign: "left" }}>
+            <p style={{ fontSize: "0.85rem", color: T.gold, lineHeight: 1.6 }}>
+              {termMsg.hype}
+            </p>
+          </div>
+        )}
         <button onClick={() => navigate("/")} style={{ background: "none", border: "none", color: T.accentLight, fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", textDecoration: "underline", fontFamily: "inherit" }}>
           Back to sign in
         </button>
@@ -402,14 +447,19 @@ export default function OnboardingFlow() {
         <TextInput
           inputRef={inputRef}
           value={a.firstName}
-          onChange={v => set("firstName", v)}
+          onChange={v => { set("firstName", v); setFirstNameError(""); }}
           onEnter={goNext}
           placeholder="First name"
           autoComplete="given-name"
         />
-        {a.firstName && (
+        {firstNameError && (
+          <div style={{ marginTop: 12, padding: "10px 14px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10, color: "#fca5a5", fontSize: "0.85rem", lineHeight: 1.5 }}>
+            {firstNameError}
+          </div>
+        )}
+        {a.firstName && !firstNameError && !/\s/.test(a.firstName.trim()) && (
           <p style={{ marginTop: 14, color: T.textMuted, fontSize: "0.9rem", animation: "fadeIn 0.3s ease-out" }}>
-            Hi, <span style={{ color: T.green, fontWeight: 700 }}>{a.firstName}</span> — great to meet you.
+            Hi, <span style={{ color: T.green, fontWeight: 700 }}>{a.firstName.trim()}</span>. Great to meet you.
           </p>
         )}
       </>
@@ -465,7 +515,7 @@ export default function OnboardingFlow() {
       <>
         <ScreenLabel>Career Direction</ScreenLabel>
         <BigQuestion>How certain are you about your career path?</BigQuestion>
-        <SubText>Most learners aren't sure yet — that's completely normal.</SubText>
+        <SubText>Most learners aren't sure yet. That's completely normal.</SubText>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {CERTAINTY_OPTIONS.map(opt => (
             <OptionCard key={opt.id} selected={a.certainty === opt.id} onClick={() => set("certainty", opt.id)}>
@@ -481,7 +531,7 @@ export default function OnboardingFlow() {
       <>
         <ScreenLabel>Your Interests</ScreenLabel>
         <BigQuestion>Which fields excite you?</BigQuestion>
-        <SubText>Pick as many as you like — you're not locking yourself in.</SubText>
+        <SubText>Pick as many as you like. You're not locking yourself in.</SubText>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {CAREER_INTERESTS.map(ci => {
             const sel = a.interests.includes(ci.id);
@@ -491,7 +541,6 @@ export default function OnboardingFlow() {
                 selected={sel}
                 onClick={() => set("interests", sel ? a.interests.filter(x => x !== ci.id) : [...a.interests, ci.id])}
               >
-                <span style={{ fontSize: "1.4rem", display: "block", marginBottom: 6 }}>{ci.icon}</span>
                 <span style={{ fontSize: "0.82rem", fontWeight: sel ? 600 : 400, lineHeight: 1.3, color: sel ? T.accentLight : T.textPrimary }}>
                   {ci.label}
                 </span>
@@ -512,7 +561,7 @@ export default function OnboardingFlow() {
         <TextInput
           inputRef={inputRef}
           value={a.email}
-          onChange={v => { set("email", v); }}
+          onChange={v => set("email", v)}
           onEnter={goNext}
           placeholder="you@example.com"
           type="email"
@@ -530,7 +579,7 @@ export default function OnboardingFlow() {
       <>
         <ScreenLabel>Dream School</ScreenLabel>
         <BigQuestion>Do you have a dream university?</BigQuestion>
-        <SubText>No pressure — you can always update this later.</SubText>
+        <SubText>No pressure. You can always update this later.</SubText>
         <OptionCard
           selected={a.university === "open"}
           onClick={() => set("university", a.university === "open" ? "" : "open")}
@@ -562,7 +611,6 @@ export default function OnboardingFlow() {
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {FINANCIAL_OPTIONS.map(opt => (
             <OptionCard key={opt.id} selected={a.financial === opt.id} onClick={() => set("financial", opt.id)}>
-              <span style={{ fontSize: "1.3rem", marginRight: 12 }}>{opt.icon}</span>
               <span style={{ fontSize: "0.95rem", fontWeight: a.financial === opt.id ? 600 : 400 }}>{opt.label}</span>
             </OptionCard>
           ))}
@@ -578,7 +626,6 @@ export default function OnboardingFlow() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {STUDY_PREFS.map(opt => (
             <GridCard key={opt.id} selected={a.studyPref === opt.id} onClick={() => set("studyPref", opt.id)}>
-              <span style={{ fontSize: "1.6rem", display: "block", marginBottom: 8 }}>{opt.icon}</span>
               <span style={{ fontSize: "0.85rem", fontWeight: a.studyPref === opt.id ? 600 : 400 }}>{opt.label}</span>
             </GridCard>
           ))}
@@ -600,7 +647,6 @@ export default function OnboardingFlow() {
                 selected={sel}
                 onClick={() => set("challenges", sel ? a.challenges.filter(x => x !== opt.id) : [...a.challenges, opt.id])}
               >
-                <span style={{ fontSize: "1.2rem", marginRight: 12 }}>{opt.icon}</span>
                 <span style={{ fontSize: "0.93rem", fontWeight: sel ? 600 : 400 }}>{opt.label}</span>
               </OptionCard>
             );
@@ -630,7 +676,7 @@ export default function OnboardingFlow() {
         <BigQuestion>Want more accurate results?</BigQuestion>
         <SubText>
           Adding your subjects and marks lets us calculate your APS, show you the courses you actually qualify for,
-          and filter out ones you don't — saving you weeks of guesswork.
+          and filter out ones you don't. It saves weeks of guesswork.
         </SubText>
         <p style={{ fontSize: "0.82rem", color: T.textMuted, marginBottom: 20, fontStyle: "italic" }}>This step is optional. You can always add marks later from your profile.</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -652,6 +698,44 @@ export default function OnboardingFlow() {
       </>
     );
 
+    if (id === "term") return (
+      <>
+        <ScreenLabel>Your Results</ScreenLabel>
+        <BigQuestion>Which term's marks are you entering?</BigQuestion>
+        <SubText>
+          We save your marks by term so your recommendations improve as the year goes on.
+          Most people entering right now are on Term 2.
+        </SubText>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+          {TERM_OPTIONS.map(opt => (
+            <GridCard key={opt.id} selected={a.term === opt.id} onClick={() => set("term", opt.id)}>
+              <p style={{ fontWeight: 700, fontSize: "0.95rem", marginBottom: 2, color: a.term === opt.id ? T.accentLight : T.textPrimary }}>
+                {opt.label}
+              </p>
+              <p style={{ fontSize: "0.78rem", color: T.textMuted }}>{opt.period}</p>
+            </GridCard>
+          ))}
+        </div>
+        {a.term && a.term !== 4 && (
+          <div style={{ padding: "14px 18px", background: "rgba(255,182,18,0.07)", border: "1px solid rgba(255,182,18,0.22)", borderRadius: 12, animation: "fadeIn 0.25s ease-out" }}>
+            <p style={{ fontSize: "0.88rem", color: T.gold, lineHeight: 1.6, fontWeight: 500 }}>
+              {TERM_MESSAGES[a.term]?.card}
+            </p>
+            <p style={{ fontSize: "0.8rem", color: "rgba(255,182,18,0.6)", marginTop: 6 }}>
+              Come back after Term 4 to lock in your final recommendations.
+            </p>
+          </div>
+        )}
+        {a.term === 4 && (
+          <div style={{ padding: "14px 18px", background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 12, animation: "fadeIn 0.25s ease-out" }}>
+            <p style={{ fontSize: "0.88rem", color: T.green, lineHeight: 1.6, fontWeight: 500 }}>
+              Final term results. These are what universities use. Let's make sure your recommendations are as accurate as possible.
+            </p>
+          </div>
+        )}
+      </>
+    );
+
     if (id === "subjects") return (
       <SubjectSection
         subjects={a.subjects}
@@ -670,35 +754,39 @@ export default function OnboardingFlow() {
     if (id === "personality") return (
       <div style={{ textAlign: "center" }}>
         <ScreenLabel>Your Results</ScreenLabel>
-        <p style={{ color: T.textSecondary, fontSize: "1rem", marginBottom: 16 }}>Based on your answers, you're a…</p>
-        <div style={{ fontSize: 64, marginBottom: 12 }}>{personality.emoji}</div>
-        <h1 style={{ fontSize: "clamp(2.4rem, 8vw, 3.6rem)", fontWeight: 900, color: T.textPrimary, marginBottom: 6 }}>
+        <p style={{ color: T.textSecondary, fontSize: "1rem", marginBottom: 20 }}>Based on your answers, you're a</p>
+        <h1 style={{ fontSize: "clamp(2.4rem, 8vw, 3.6rem)", fontWeight: 900, color: T.textPrimary, marginBottom: 8 }}>
           {personality.type}
         </h1>
         <p style={{ fontSize: "1.1rem", color: T.accentLight, fontStyle: "italic", marginBottom: 24 }}>
           "{personality.tagline}"
         </p>
-        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: "20px 24px", textAlign: "left", marginBottom: 20 }}>
+        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: "20px 24px", textAlign: "left", marginBottom: 16 }}>
           <p style={{ color: T.textSecondary, lineHeight: 1.7, fontSize: "0.95rem" }}>{personality.summary}</p>
         </div>
-        {answers.wantsPersonalisation && answers.subjects.length > 0 && (
-          <div style={{ background: "rgba(99,102,241,0.1)", border: `1px solid ${T.borderActive}`, borderRadius: 14, padding: "16px 20px", textAlign: "left" }}>
+        {a.wantsPersonalisation && a.subjects.length > 0 && (
+          <div style={{ background: "rgba(99,102,241,0.1)", border: `1px solid ${T.borderActive}`, borderRadius: 14, padding: "16px 20px", textAlign: "left", marginBottom: 16 }}>
             <p style={{ fontSize: 11, color: T.accentLight, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, marginBottom: 4 }}>Your APS Score</p>
             <p style={{ fontSize: "2.4rem", fontWeight: 900, color: T.textPrimary, lineHeight: 1 }}>{aps}</p>
-            <p style={{ fontSize: "0.78rem", color: T.textMuted, marginTop: 4 }}>Based on {answers.subjects.length} subjects — Life Orientation excluded</p>
+            <p style={{ fontSize: "0.78rem", color: T.textMuted, marginTop: 4 }}>Based on {a.subjects.length} subjects. Life Orientation excluded.</p>
           </div>
         )}
-        <p style={{ fontSize: "0.85rem", color: T.textMuted, marginTop: 20 }}>Create your free account to save this and get your full roadmap →</p>
+        {termMsg && (
+          <div style={{ background: "rgba(255,182,18,0.07)", border: "1px solid rgba(255,182,18,0.2)", borderRadius: 12, padding: "14px 18px", textAlign: "left" }}>
+            <p style={{ fontSize: "0.85rem", color: T.gold, lineHeight: 1.65 }}>{termMsg.hype}</p>
+          </div>
+        )}
+        <p style={{ fontSize: "0.85rem", color: T.textMuted, marginTop: 20 }}>Set a password to save these results and get your full roadmap.</p>
       </div>
     );
 
     if (id === "password") return (
       <form onSubmit={handleCreateAccount}>
-        <ScreenLabel>Last Step</ScreenLabel>
-        <BigQuestion>Create a password, {a.firstName}.</BigQuestion>
+        <ScreenLabel>Save Your Results</ScreenLabel>
+        <BigQuestion>One last thing, {a.firstName}.</BigQuestion>
         <SubText>
-          Secures your account at <span style={{ color: T.textPrimary, fontWeight: 600 }}>{a.email}</span>.
-          You'll use it to log in and access your roadmap anytime.
+          Set a password so you can access your results and roadmap anytime from{" "}
+          <span style={{ color: T.textPrimary, fontWeight: 600 }}>{a.email}</span>.
         </SubText>
         <div style={{ position: "relative", marginBottom: 8 }}>
           <input
@@ -752,9 +840,9 @@ export default function OnboardingFlow() {
           {submitting ? (
             <>
               <span style={{ width: 18, height: 18, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
-              Creating your account…
+              Saving your results...
             </>
-          ) : "Create My Account →"}
+          ) : "Save My Results"}
         </button>
 
         <p style={{ marginTop: 16, textAlign: "center", fontSize: "0.85rem", color: T.textMuted }}>
@@ -776,38 +864,31 @@ export default function OnboardingFlow() {
   return (
     <div style={{ minHeight: "100vh", background: T.bg, display: "flex", flexDirection: "column", fontFamily: "Inter, system-ui, sans-serif" }}>
 
-      {/* Depth accent — matches landing page */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
         background: "radial-gradient(ellipse at 20% 0%, rgba(99,102,241,0.07) 0%, transparent 55%), radial-gradient(ellipse at 80% 100%, rgba(139,92,246,0.05) 0%, transparent 55%)" }}
       />
 
       {/* Progress bar */}
       <div style={{ position: "sticky", top: 0, zIndex: 20, background: T.bg }}>
-        <div style={{ height: 3, background: "rgba(255,255,255,0.07)" }}>
+        <div style={{ height: 5, background: "rgba(255,255,255,0.1)" }}>
           <div style={{
             height: "100%",
             width: `${progressPct}%`,
             background: T.btnGrad,
             transition: "width 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
-            boxShadow: `0 0 10px ${T.accentGlow}`,
+            boxShadow: `0 0 14px ${T.accentGlow}, 0 0 4px rgba(99,102,241,0.6)`,
           }} />
         </div>
-        {/* Header row */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px 10px" }}>
           <button
             onClick={goBack}
             style={{ background: "none", border: "none", color: T.textMuted, fontSize: "0.88rem", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", padding: 0, transition: "color 0.15s" }}
           >
-            ← Back
+            Back
           </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: "0.72rem", color: T.textMuted, fontWeight: 600 }}>
-              {screenIdx + 1}/{SCREENS.length}
-            </span>
-            <span style={{ fontSize: "0.8rem", fontWeight: 700, color: T.accentLight }}>
-              {progressPct}%
-            </span>
-          </div>
+          <span style={{ fontSize: "0.8rem", fontWeight: 700, color: T.accentLight }}>
+            {progressPct}%
+          </span>
         </div>
       </div>
 
@@ -838,7 +919,7 @@ export default function OnboardingFlow() {
               backgroundSize: "200% 200%",
             }}
           >
-            {currentScreen.id === "personality" ? "Create My Account →" : "Continue →"}
+            Continue
           </button>
         </div>
       )}

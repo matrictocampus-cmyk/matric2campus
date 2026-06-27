@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   FiHome,
-  FiUser,
   FiCheckSquare,
   FiLayers,
   FiSettings,
@@ -13,12 +12,11 @@ export default function Sidebar({ open = true, setOpen = () => {}, profile }) {
   const location = useLocation();
 
   const menuItems = [
-    { name: "Dashboard", path: "/dashboard", icon: <FiHome /> },
-    { name: "My Profile", path: "/profile", icon: <FiUser /> },
-    { name: "Browse Institutions", path: "/institutions", icon: <FiGrid /> },
-    { name: "Eligibility", path: "/eligibility", icon: <FiLayers /> },
-    { name: "Apply", path: "/apply", icon: <FiCheckSquare /> },
-    { name: "Settings", path: "/settings", icon: <FiSettings /> },
+    { name: "Dashboard",    path: "/dashboard",   icon: <FiHome />        },
+    { name: "Courses",      path: "/eligibility", icon: <FiLayers />      },
+    { name: "Institutions", path: "/institutions", icon: <FiGrid />       },
+    { name: "Apply",        path: "/apply",        icon: <FiCheckSquare />},
+    { name: "Settings",     path: "/settings",     icon: <FiSettings />   },
   ];
 
   return (

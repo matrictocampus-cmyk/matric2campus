@@ -1,365 +1,392 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-const APS_MAP = {
-  "0-29%": 1, "30-39%": 2, "40-49%": 3,
-  "50-59%": 4, "60-69%": 5, "70-79%": 6, "80-100%": 7,
-};
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function pctToLevel(pct) {
+  const p = Number(pct);
+  if (p >= 80) return 7;
+  if (p >= 70) return 6;
+  if (p >= 60) return 5;
+  if (p >= 50) return 4;
+  if (p >= 40) return 3;
+  if (p >= 30) return 2;
+  return 1;
+}
 
-function calcAPS(marksObj) {
-  return Object.entries(marksObj || {}).reduce((sum, [subj, lvl]) => {
-    if (String(subj).toLowerCase().includes("life orientation") || String(subj).toLowerCase() === "lo") return sum;
-    return sum + (APS_MAP[lvl] || 0);
+function calcAPS(subjectsMarks) {
+  if (!subjectsMarks || typeof subjectsMarks !== "object") return 0;
+  return Object.entries(subjectsMarks).reduce((sum, [subj, mark]) => {
+    if (subj.toLowerCase().includes("life orientation")) return sum;
+    return sum + pctToLevel(mark);
   }, 0);
 }
 
-const BUNDLE_STATUS_CFG = {
-  pending_documents: { label: "Pending Documents",  bg: "bg-amber-50",  border: "border-amber-200",  text: "text-amber-800",  badge: "bg-amber-100 text-amber-700",  icon: "⏳" },
-  in_progress:       { label: "In Progress",         bg: "bg-blue-50",   border: "border-blue-200",   text: "text-blue-800",   badge: "bg-blue-100 text-blue-700",   icon: "🔄" },
-  submitted:         { label: "Submitted",           bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-800", badge: "bg-purple-100 text-purple-700",icon: "📬" },
-  action_required:   { label: "Action Required",     bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-800", badge: "bg-orange-100 text-orange-700",icon: "⚠️" },
-  completed:         { label: "Completed",           bg: "bg-green-50",  border: "border-green-200",  text: "text-green-800",  badge: "bg-green-100 text-green-700",  icon: "✅" },
-  rejected:          { label: "Rejected",            bg: "bg-red-50",    border: "border-red-200",    text: "text-red-800",    badge: "bg-red-100 text-red-700",    icon: "❌" },
+// Map career interest IDs to keywords for matching institution_courses.category
+const INTEREST_KEYWORDS = {
+  tech:        ["tech", "computer", "software", "information", "digital", "data", "it"],
+  health:      ["health", "medical", "nursing", "pharmacy", "medicine", "clinical", "biomedical"],
+  business:    ["business", "commerce", "finance", "accounting", "management", "marketing", "economics"],
+  engineering: ["engineering", "civil", "mechanical", "electrical", "chemical", "industrial"],
+  arts:        ["art", "design", "music", "drama", "visual", "creative", "architecture"],
+  sciences:    ["science", "biology", "chemistry", "physics", "natural", "environmental"],
+  social:      ["social", "education", "teaching", "psychology", "welfare", "development"],
+  law:         ["law", "legal", "justice", "criminology", "policing"],
+  agriculture: ["agriculture", "agri", "farming", "food", "environmental"],
+  media:       ["media", "communication", "journalism", "broadcasting", "public relations"],
 };
 
+function interestsMatchCategory(interests = [], category = "") {
+  const cat = category.toLowerCase();
+  return interests.some(id => (INTEREST_KEYWORDS[id] || []).some(kw => cat.includes(kw)));
+}
+
+const INTEREST_LABELS = {
+  tech: "Technology", health: "Health & Medicine", business: "Business & Finance",
+  engineering: "Engineering", arts: "Arts & Design", sciences: "Natural Sciences",
+  social: "Education & Social Work", law: "Law & Justice",
+  agriculture: "Agriculture", media: "Media & Comms",
+};
+
+const PERSONALITY_STYLE = {
+  "Innovator":     "bg-indigo-50 text-indigo-700 border-indigo-200",
+  "Builder":       "bg-amber-50  text-amber-700  border-amber-200",
+  "Healer":        "bg-green-50  text-green-700  border-green-200",
+  "Analyst":       "bg-blue-50   text-blue-700   border-blue-200",
+  "Strategist":    "bg-purple-50 text-purple-700 border-purple-200",
+  "Creator":       "bg-pink-50   text-pink-700   border-pink-200",
+  "People Person": "bg-teal-50   text-teal-700   border-teal-200",
+  "Advocate":      "bg-slate-50  text-slate-700  border-slate-200",
+  "Steward":       "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "Storyteller":   "bg-orange-50 text-orange-700 border-orange-200",
+  "Explorer":      "bg-sky-50    text-sky-700    border-sky-200",
+};
+
+const TERM_REMINDER = {
+  1: "You entered Term 1 results. Come back after each term to keep your recommendations sharp.",
+  2: "You're halfway through the year. Update these with your Term 3 and Term 4 marks as they come in.",
+  3: "One term to go. Come back after Term 4 to lock in your final recommendations.",
+};
+
+const BUNDLE_STATUS = {
+  pending_documents: { label: "Pending Documents", color: "bg-amber-100 text-amber-700" },
+  in_progress:       { label: "In Progress",        color: "bg-blue-100 text-blue-700"   },
+  submitted:         { label: "Submitted",           color: "bg-purple-100 text-purple-700"},
+  action_required:   { label: "Action Required",     color: "bg-red-100 text-red-700"     },
+  completed:         { label: "Completed",           color: "bg-green-100 text-green-700" },
+  rejected:          { label: "Rejected",            color: "bg-gray-100 text-gray-500"   },
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate = useNavigate();
-
-  const [profile, setProfile]                   = useState(null);
-  const [bucketCount, setBucketCount]           = useState(0);
-  const [activeBundle, setActiveBundle]         = useState(null);
-  const [activeApps, setActiveApps]             = useState([]);
-  const [loading, setLoading]                   = useState(true);
+  const [data, setData]     = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
+    (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { navigate("/"); return; }
 
-        const [{ data: prof }, bundleResult, bucketResult] = await Promise.all([
+        const [
+          { data: profile },
+          { data: onboarding },
+          { data: courses },
+          { data: bundle },
+          { data: bucket },
+        ] = await Promise.all([
           supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
-          supabase.from("application_bundles").select("*").eq("user_id", user.id)
-            .not("status", "in", '("completed","rejected")').maybeSingle(),
+          supabase.from("onboarding_responses").select("personality_summary, results_term, financial_concern, dream_university, support_needed").eq("user_id", user.id).maybeSingle(),
+          supabase.from("institution_courses").select("id, title, category, duration, entry_requirements, programme_type").limit(50),
+          supabase.from("application_bundles").select("id, bundle_ref, status, created_at").eq("user_id", user.id).not("status", "in", '("completed","rejected")').maybeSingle(),
           supabase.from("application_bucket").select("id").eq("user_id", user.id).is("package_id", null),
         ]);
 
-        setProfile(prof);
-        setBucketCount(bucketResult.data?.length || 0);
-
-        if (bundleResult.data) {
-          setActiveBundle(bundleResult.data);
+        let activeApps = [];
+        if (bundle?.id) {
           const { data: apps } = await supabase
-            .from("applications").select("id, course_title, institution_name, status, admin_comment")
-            .eq("bundle_id", bundleResult.data.id);
-          setActiveApps(apps || []);
+            .from("applications")
+            .select("id, course_title, institution_name, status")
+            .eq("bundle_id", bundle.id);
+          activeApps = apps || [];
         }
+
+        setData({ profile, onboarding, courses: courses || [], bundle, bucketCount: bucket?.length || 0, activeApps });
       } catch (err) {
         console.error("Dashboard load error:", err);
       } finally {
         setLoading(false);
       }
-    };
-    load();
+    })();
   }, [navigate]);
 
   if (loading) {
     return (
-      <div className="p-6 space-y-4 animate-pulse">
-        <div className="h-10 bg-gray-100 rounded-xl w-1/3" />
-        <div className="h-28 bg-gray-100 rounded-xl" />
-        <div className="grid grid-cols-3 gap-4">
-          {[0,1,2].map(i => <div key={i} className="h-24 bg-gray-100 rounded-xl" />)}
+      <div className="max-w-3xl mx-auto p-6 space-y-4 animate-pulse">
+        <div className="h-24 bg-gray-100 rounded-2xl" />
+        <div className="grid grid-cols-3 gap-3">
+          {[0,1,2].map(i => <div key={i} className="h-20 bg-gray-100 rounded-xl" />)}
         </div>
+        <div className="h-16 bg-gray-100 rounded-xl" />
+        <div className="h-48 bg-gray-100 rounded-2xl" />
       </div>
     );
   }
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const firstName = profile?.first_name || "Student";
-  const userAPS = calcAPS(profile?.subjects_marks);
-  const hasProfile = !!(profile?.first_name && profile?.subjects_marks);
-  const hasSubjects = !!(profile?.subjects_marks);
+  const { profile, onboarding, courses, bundle, bucketCount, activeApps } = data || {};
 
-  // ── Smart "next step" logic ───────────────────────────────────────────────
-  let nextStep = null;
-  if (!profile?.first_name) {
-    nextStep = {
-      priority: "high",
-      icon: "👤",
-      title: "Complete your profile",
-      desc: "Add your personal details and subject marks so we can match you with courses.",
-      action: () => navigate("/profile"),
-      cta: "Go to Profile",
-      color: "blue",
-    };
-  } else if (!hasSubjects) {
-    nextStep = {
-      priority: "high",
-      icon: "📚",
-      title: "Add your subject marks",
-      desc: "Your matric results are needed to calculate your APS and check eligibility.",
-      action: () => navigate("/profile"),
-      cta: "Add Subjects",
-      color: "purple",
-    };
-  } else if (activeBundle?.status === "action_required") {
-    nextStep = {
-      priority: "urgent",
-      icon: "⚠️",
-      title: "Admin needs your attention",
-      desc: "An issue was flagged on your application. Check the details and upload a response.",
-      action: () => navigate("/apply"),
-      cta: "View & Respond",
-      color: "orange",
-    };
-  } else if (activeBundle?.status === "pending_documents" && !activeBundle.locked) {
-    nextStep = {
-      priority: "high",
-      icon: "📋",
-      title: "Complete your application",
-      desc: "Your bundle is created. Open the CAO Assistant or upload documents for admin assistance.",
-      action: () => navigate("/apply"),
-      cta: "Complete Application",
-      color: "amber",
-    };
-  } else if (activeBundle) {
-    nextStep = {
-      priority: "info",
-      icon: BUNDLE_STATUS_CFG[activeBundle.status]?.icon || "📦",
-      title: `Application ${BUNDLE_STATUS_CFG[activeBundle.status]?.label || activeBundle.status}`,
-      desc: `${activeApps.length} course${activeApps.length !== 1 ? "s" : ""} submitted. We'll update you as things progress.`,
-      action: () => navigate("/apply"),
-      cta: "Track Application",
-      color: "blue",
-    };
-  } else if (bucketCount > 0) {
-    nextStep = {
-      priority: "high",
-      icon: "🚀",
-      title: `${bucketCount} course${bucketCount !== 1 ? "s" : ""} ready to apply`,
-      desc: "You've added courses to your bucket. Select a package and submit your application.",
-      action: () => navigate("/apply"),
-      cta: "Apply Now",
-      color: "green",
-    };
-  } else if (hasProfile) {
-    nextStep = {
-      priority: "normal",
-      icon: "🎯",
-      title: "Find courses you qualify for",
-      desc: "Based on your APS of " + userAPS + ", see which programmes you're eligible for and add them to your application.",
-      action: () => navigate("/eligibility"),
-      cta: "Browse Eligible Courses",
-      color: "green",
-    };
-  }
+  const firstName      = profile?.first_name || "there";
+  const hour           = new Date().getHours();
+  const greeting       = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const aps            = calcAPS(profile?.subjects_marks);
+  const subjectCount   = Object.keys(profile?.subjects_marks || {}).length;
+  const interests      = profile?.career_interests || [];
+  const personality    = profile?.personality_type || null;
+  const grade          = profile?.grade || null;
+  const province       = profile?.province || null;
+  const resultsTerm    = onboarding?.results_term || null;
+  const hasOnboarding  = !!(profile?.onboarding_completed);
+  const personalityStyle = PERSONALITY_STYLE[personality] || "bg-gray-50 text-gray-600 border-gray-200";
 
-  const COLOR_MAP = {
-    blue:   { bg: "bg-blue-600",   hover: "hover:bg-blue-700",   ring: "ring-blue-200",   soft: "bg-blue-50 border-blue-200",   text: "text-blue-800"   },
-    purple: { bg: "bg-purple-600", hover: "hover:bg-purple-700", ring: "ring-purple-200", soft: "bg-purple-50 border-purple-200",text: "text-purple-800" },
-    green:  { bg: "bg-green-600",  hover: "hover:bg-green-700",  ring: "ring-green-200",  soft: "bg-green-50 border-green-200",  text: "text-green-800"  },
-    amber:  { bg: "bg-amber-500",  hover: "hover:bg-amber-600",  ring: "ring-amber-200",  soft: "bg-amber-50 border-amber-200",  text: "text-amber-800"  },
-    orange: { bg: "bg-orange-600", hover: "hover:bg-orange-700", ring: "ring-orange-200", soft: "bg-orange-50 border-orange-200",text: "text-orange-800" },
-  };
+  // Matched courses: filter by career interest keywords + APS if available
+  const matchedCourses = courses
+    .filter(c => interestsMatchCategory(interests, c.category || c.title || ""))
+    .filter(c => {
+      const minAps = c.entry_requirements?.min_aps || c.entry_requirements?.aps || 0;
+      return aps === 0 || !minAps || aps >= minAps;
+    })
+    .slice(0, 6);
 
-  // ── Journey steps ──────────────────────────────────────────────────────────
-  const steps = [
-    {
-      num: 1, label: "Profile",
-      done: hasProfile,
-      active: !hasProfile,
-      sub: hasProfile ? `APS ${userAPS}` : "Add your details & marks",
-      path: "/profile",
-    },
-    {
-      num: 2, label: "Eligibility",
-      done: hasProfile && (bucketCount > 0 || !!activeBundle),
-      active: hasProfile && bucketCount === 0 && !activeBundle,
-      sub: bucketCount > 0 ? `${bucketCount} in bucket` : activeBundle ? "Applied" : "Browse courses",
-      path: "/eligibility",
-    },
-    {
-      num: 3, label: "Apply",
-      done: !!activeBundle,
-      active: bucketCount > 0 && !activeBundle,
-      sub: activeBundle
-        ? (BUNDLE_STATUS_CFG[activeBundle.status]?.label || activeBundle.status)
-        : bucketCount > 0 ? "Ready to pay" : "Pay & submit",
-      path: "/apply",
-    },
-  ];
+  const showTermReminder = hasOnboarding && resultsTerm && resultsTerm < 4 && subjectCount > 0;
+  const needsOnboarding  = !hasOnboarding;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-6 space-y-5">
+    <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-5">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{greeting}, {firstName}</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Here's where your application stands today.</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            {greeting}, {firstName}
+          </h1>
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {personality && (
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${personalityStyle}`}>
+                {personality}
+              </span>
+            )}
+            {grade && <span className="text-xs text-gray-400">{grade}</span>}
+            {province && <span className="text-xs text-gray-400">· {province}</span>}
+          </div>
         </div>
-        {hasSubjects && (
-          <div className="bg-blue-600 text-white rounded-xl px-4 py-2 text-center">
-            <p className="text-xs font-medium opacity-80">Your APS</p>
-            <p className="text-2xl font-bold leading-tight">{userAPS}</p>
+        {aps > 0 && (
+          <div className="text-center bg-gray-900 text-white rounded-xl px-5 py-3 min-w-[72px]">
+            <p className="text-[10px] font-semibold uppercase tracking-widest opacity-60">APS</p>
+            <p className="text-3xl font-extrabold leading-none">{aps}</p>
           </div>
         )}
       </div>
 
-      {/* ── Next Step CTA ──────────────────────────────────────────────────── */}
-      {nextStep && (() => {
-        const c = COLOR_MAP[nextStep.color] || COLOR_MAP.blue;
-        const isUrgent = nextStep.priority === "urgent";
-        return (
-          <div className={`border rounded-xl p-5 ${c.soft} flex items-start justify-between gap-4 ${isUrgent ? `ring-2 ${c.ring}` : ""}`}>
-            <div className="flex items-start gap-3 flex-1">
-              <span className="text-2xl flex-shrink-0 mt-0.5">{nextStep.icon}</span>
-              <div>
-                <p className={`font-bold ${c.text}`}>{nextStep.title}</p>
-                <p className="text-sm text-gray-600 mt-0.5">{nextStep.desc}</p>
-              </div>
-            </div>
-            <button
-              onClick={nextStep.action}
-              className={`flex-shrink-0 ${c.bg} ${c.hover} text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap`}
-            >
-              {nextStep.cta} →
-            </button>
-          </div>
-        );
-      })()}
-
-      {/* ── Journey Progress ───────────────────────────────────────────────── */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Your Journey</p>
-        <div className="flex items-start gap-0">
-          {steps.map((step, i) => (
-            <React.Fragment key={step.num}>
-              <button
-                onClick={() => navigate(step.path)}
-                className="flex flex-col items-center flex-1 group text-center"
-              >
-                <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-sm font-bold mb-2 transition-colors ${
-                  step.done
-                    ? "border-green-500 bg-green-500 text-white"
-                    : step.active
-                    ? "border-blue-500 bg-blue-50 text-blue-600"
-                    : "border-gray-200 bg-gray-50 text-gray-400"
-                }`}>
-                  {step.done ? "✓" : step.num}
-                </div>
-                <p className={`text-xs font-semibold ${step.done ? "text-green-600" : step.active ? "text-blue-600" : "text-gray-400"}`}>
-                  {step.label}
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5 leading-tight">{step.sub}</p>
-              </button>
-              {i < steps.length - 1 && (
-                <div className={`flex-1 h-0.5 mt-5 mx-1 ${steps[i].done ? "bg-green-400" : "bg-gray-200"}`} />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Active application detail ──────────────────────────────────────── */}
-      {activeBundle && (() => {
-        const cfg = BUNDLE_STATUS_CFG[activeBundle.status] || { label: activeBundle.status, bg: "bg-gray-50", border: "border-gray-200", text: "text-gray-700", badge: "bg-gray-100 text-gray-600", icon: "📦" };
-        return (
-          <div className={`border rounded-xl p-5 space-y-4 ${cfg.bg} ${cfg.border}`}>
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <p className={`font-semibold ${cfg.text}`}>
-                  {cfg.icon} Bundle #{activeBundle.bundle_ref || activeBundle.id}
-                </p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Created {new Date(activeBundle.created_at).toLocaleDateString("en-ZA")} · {activeApps.length} course{activeApps.length !== 1 ? "s" : ""}
-                </p>
-              </div>
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.badge}`}>
-                {cfg.label}
-              </span>
-            </div>
-
-            {activeApps.length > 0 && (
-              <div className="space-y-2">
-                {activeApps.map(app => (
-                  <div key={app.id} className="bg-white/70 rounded-lg px-3 py-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{app.course_title}</p>
-                        <p className="text-xs text-gray-500">{app.institution_name}</p>
-                      </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
-                        BUNDLE_STATUS_CFG[app.status]?.badge || "bg-gray-100 text-gray-600"
-                      }`}>
-                        {(app.status || "pending").replace(/_/g, " ")}
-                      </span>
-                    </div>
-                    {app.admin_comment && (
-                      <p className="text-xs text-orange-600 mt-1.5 bg-orange-50 rounded px-2 py-1">
-                        💬 {app.admin_comment}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <button
-              onClick={() => navigate("/apply")}
-              className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
-            >
-              View full application →
-            </button>
-          </div>
-        );
-      })()}
-
-      {/* ── Bucket preview (no active bundle) ─────────────────────────────── */}
-      {!activeBundle && bucketCount > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-2xl font-bold text-green-600">
-              {bucketCount}
-            </div>
-            <div>
-              <p className="font-semibold text-gray-900">Courses in your bucket</p>
-              <p className="text-sm text-gray-500">Ready to apply — select a package and pay</p>
-            </div>
+      {/* ── No onboarding → single CTA ────────────────────────────────────── */}
+      {needsOnboarding && (
+        <div className="bg-gray-950 text-white rounded-2xl p-6 flex items-center justify-between gap-4">
+          <div>
+            <p className="font-bold text-base">Complete your quiz first</p>
+            <p className="text-sm text-white/60 mt-1">
+              Takes 3 minutes. We'll build your personalised roadmap from your answers.
+            </p>
           </div>
           <button
-            onClick={() => navigate("/apply")}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap"
+            onClick={() => navigate("/onboarding")}
+            className="flex-shrink-0 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap"
           >
-            Apply Now →
+            Start quiz
           </button>
         </div>
       )}
 
-      {/* ── Profile snapshot (only when profile exists but no active action) ─ */}
-      {hasProfile && !activeBundle && bucketCount === 0 && (
-        <div className="grid sm:grid-cols-3 gap-3">
-          {[
-            { label: "APS Score",    value: userAPS,                                      sub: "out of ~42",    color: "text-blue-600"  },
-            { label: "Subjects",     value: Object.keys(profile.subjects_marks || {}).length, sub: "recorded",  color: "text-purple-600"},
-            { label: "Profile",      value: profile.is_completed ? "Complete" : "Partial", sub: "",             color: profile.is_completed ? "text-green-600" : "text-amber-600"},
-          ].map(({ label, value, sub, color }) => (
-            <div key={label} className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">{label}</p>
-              <p className={`text-2xl font-bold mt-1 ${color}`}>{value}</p>
-              {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-            </div>
-          ))}
+      {/* ── Stats row ──────────────────────────────────────────────────────── */}
+      {hasOnboarding && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white border border-gray-100 rounded-xl p-4 text-center shadow-sm">
+            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">APS</p>
+            <p className="text-2xl font-extrabold text-gray-900 mt-0.5">{aps || "—"}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">out of ~42</p>
+          </div>
+          <div className="bg-white border border-gray-100 rounded-xl p-4 text-center shadow-sm">
+            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Subjects</p>
+            <p className="text-2xl font-extrabold text-gray-900 mt-0.5">{subjectCount || "—"}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">recorded</p>
+          </div>
+          <div className="bg-white border border-gray-100 rounded-xl p-4 text-center shadow-sm">
+            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Interests</p>
+            <p className="text-2xl font-extrabold text-gray-900 mt-0.5">{interests.length || "—"}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">selected</p>
+          </div>
         </div>
       )}
 
-      {/* ── Footer ─────────────────────────────────────────────────────────── */}
-      <p className="text-center text-xs text-gray-400 pb-2">
-        Need help? <a href="mailto:support@txi.ac.za" className="underline">support@txi.ac.za</a>
-      </p>
+      {/* ── Term reminder ──────────────────────────────────────────────────── */}
+      {showTermReminder && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
+          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 mt-1.5" />
+          <p className="text-sm text-amber-800 leading-relaxed">
+            <span className="font-semibold">Term {resultsTerm} results saved.</span>{" "}
+            {TERM_REMINDER[resultsTerm]}
+          </p>
+        </div>
+      )}
+
+      {/* ── Active application ─────────────────────────────────────────────── */}
+      {bundle && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <p className="font-semibold text-gray-900 text-sm">
+              Application #{bundle.bundle_ref || bundle.id.slice(0, 8)}
+            </p>
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${BUNDLE_STATUS[bundle.status]?.color || "bg-gray-100 text-gray-600"}`}>
+              {BUNDLE_STATUS[bundle.status]?.label || bundle.status}
+            </span>
+          </div>
+          {activeApps.length > 0 && (
+            <div className="space-y-1.5">
+              {activeApps.map(app => (
+                <div key={app.id} className="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{app.course_title}</p>
+                    <p className="text-xs text-gray-400">{app.institution_name}</p>
+                  </div>
+                  <span className="text-xs text-gray-400 flex-shrink-0 capitalize">
+                    {(app.status || "pending").replace(/_/g, " ")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={() => navigate("/apply")}
+            className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            View application details →
+          </button>
+        </div>
+      )}
+
+      {/* ── Bucket ready ───────────────────────────────────────────────────── */}
+      {!bundle && bucketCount > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between gap-4 shadow-sm">
+          <div>
+            <p className="font-semibold text-gray-900">
+              {bucketCount} course{bucketCount !== 1 ? "s" : ""} saved
+            </p>
+            <p className="text-sm text-gray-500 mt-0.5">Ready to apply. Select a package and submit.</p>
+          </div>
+          <button
+            onClick={() => navigate("/apply")}
+            className="flex-shrink-0 bg-gray-900 hover:bg-gray-700 text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap"
+          >
+            Apply now
+          </button>
+        </div>
+      )}
+
+      {/* ── Recommended courses ────────────────────────────────────────────── */}
+      {hasOnboarding && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="font-semibold text-gray-900">Recommended for you</p>
+            <button
+              onClick={() => navigate("/eligibility")}
+              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition-colors"
+            >
+              Browse all →
+            </button>
+          </div>
+
+          {/* Interest tags */}
+          {interests.length > 0 && (
+            <div className="flex gap-2 flex-wrap">
+              {interests.map(id => (
+                <span key={id} className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full font-medium">
+                  {INTEREST_LABELS[id] || id}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {matchedCourses.length > 0 ? (
+            <div className="space-y-2">
+              {matchedCourses.map(course => {
+                const minAps = course.entry_requirements?.min_aps || course.entry_requirements?.aps;
+                const eligible = !minAps || aps === 0 || aps >= minAps;
+                return (
+                  <div key={course.id} className="bg-white border border-gray-100 rounded-xl px-4 py-3.5 flex items-center justify-between gap-3 shadow-sm hover:border-gray-300 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 leading-snug">{course.title}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {course.category && (
+                          <span className="text-[11px] text-gray-400">{course.category}</span>
+                        )}
+                        {course.duration && (
+                          <span className="text-[11px] text-gray-400">· {course.duration}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {minAps && (
+                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${eligible ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+                          APS {minAps}+
+                        </span>
+                      )}
+                      <button
+                        onClick={() => navigate("/eligibility")}
+                        className="text-xs text-indigo-600 font-semibold hover:text-indigo-800 whitespace-nowrap"
+                      >
+                        View
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center shadow-sm">
+              <p className="text-sm font-semibold text-gray-700">Find courses you qualify for</p>
+              <p className="text-sm text-gray-400 mt-1 mb-4">
+                Browse programmes matched to your APS of {aps > 0 ? aps : "…"} and your interests.
+              </p>
+              <button
+                onClick={() => navigate("/eligibility")}
+                className="inline-flex items-center gap-1.5 bg-gray-900 hover:bg-gray-700 text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors"
+              >
+                Browse eligible courses
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Need help ──────────────────────────────────────────────────────── */}
+      {hasOnboarding && !bundle && (
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => navigate("/institutions")}
+            className="bg-white border border-gray-100 rounded-xl p-4 text-left hover:border-gray-300 transition-colors shadow-sm group"
+          >
+            <p className="text-sm font-semibold text-gray-900">Browse institutions</p>
+            <p className="text-xs text-gray-400 mt-0.5 group-hover:text-gray-500">Universities, colleges, TVET</p>
+          </button>
+          <button
+            onClick={() => navigate("/eligibility")}
+            className="bg-white border border-gray-100 rounded-xl p-4 text-left hover:border-gray-300 transition-colors shadow-sm group"
+          >
+            <p className="text-sm font-semibold text-gray-900">Check eligibility</p>
+            <p className="text-xs text-gray-400 mt-0.5 group-hover:text-gray-500">See every course you qualify for</p>
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }

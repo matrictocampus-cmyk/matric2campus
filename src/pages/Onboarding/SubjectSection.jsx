@@ -3,8 +3,20 @@ import { SA_SUBJECTS, getAchievementLevel } from "./onboardingConfig";
 
 const MATH_CONFLICT = ["Mathematics", "Mathematical Literacy"];
 
-export default function SubjectSection({ subjects, marks, onSubjectsChange, onMarksChange, onComplete }) {
-  const [phase, setPhase] = useState("pick"); // "pick" | "marks"
+const DEFAULT_T = {
+  bg: "#04040A", surface: "#0E0E1A",
+  border: "rgba(255,255,255,0.08)", borderActive: "#6366f1",
+  textPrimary: "#F9FAFB", textSecondary: "rgba(255,255,255,0.5)",
+  textMuted: "rgba(255,255,255,0.28)", accentLight: "#a5b4fc",
+  green: "#4ade80",
+  btnGrad: "linear-gradient(135deg, #6366f1 0%, #818cf8 50%, #6366f1 100%)",
+  btnShadow: "0 4px 28px rgba(99,102,241,0.45)",
+};
+
+export default function SubjectSection({ subjects, marks, onSubjectsChange, onMarksChange, onComplete, darkTheme }) {
+  const T = darkTheme ?? DEFAULT_T;
+
+  const [phase, setPhase] = useState("pick");
   const [markStep, setMarkStep] = useState(0);
   const [search, setSearch] = useState("");
   const [markInput, setMarkInput] = useState("");
@@ -19,15 +31,9 @@ export default function SubjectSection({ subjects, marks, onSubjectsChange, onMa
     subjects.includes("Mathematics") && subjects.includes("Mathematical Literacy");
 
   function toggleSubject(subject) {
-    if (subjects.includes(subject)) {
-      onSubjectsChange(subjects.filter(s => s !== subject));
-    } else {
-      onSubjectsChange([...subjects, subject]);
-    }
-  }
-
-  function canProceedToPick() {
-    return subjects.length >= 5 && !hasMathConflict;
+    onSubjectsChange(subjects.includes(subject)
+      ? subjects.filter(s => s !== subject)
+      : [...subjects, subject]);
   }
 
   function startMarks() {
@@ -38,117 +44,150 @@ export default function SubjectSection({ subjects, marks, onSubjectsChange, onMa
   }
 
   const currentSubject = subjects[markStep];
-  const currentMark = Number(markInput);
-  const achievement = markInput !== "" && !isNaN(currentMark)
-    ? getAchievementLevel(Math.min(100, Math.max(0, currentMark)))
+  const rawMark = Number(markInput);
+  const achievement = markInput !== "" && !isNaN(rawMark)
+    ? getAchievementLevel(Math.min(100, Math.max(0, rawMark)))
     : null;
 
   function validateAndAdvance() {
     const val = Number(markInput);
-    if (markInput === "" || isNaN(val)) {
-      setMarkError("Please enter a mark between 0 and 100.");
-      return;
-    }
-    if (val < 0 || val > 100) {
-      setMarkError("Mark must be between 0% and 100%.");
-      return;
-    }
+    if (markInput === "" || isNaN(val)) { setMarkError("Please enter a mark between 0 and 100."); return; }
+    if (val < 0 || val > 100) { setMarkError("Mark must be between 0% and 100%."); return; }
     setMarkError("");
     const updated = { ...marks, [currentSubject]: val };
     onMarksChange(updated);
-
     if (markStep < subjects.length - 1) {
       const next = markStep + 1;
       setMarkStep(next);
       setMarkInput(updated[subjects[next]] !== undefined ? String(updated[subjects[next]]) : "");
-      setMarkError("");
     } else {
       onComplete(updated);
     }
   }
 
   function goBackInMarks() {
-    if (markStep === 0) {
-      setPhase("pick");
-    } else {
-      const prev = markStep - 1;
-      setMarkStep(prev);
-      setMarkInput(marks[subjects[prev]] !== undefined ? String(marks[subjects[prev]]) : "");
-      setMarkError("");
-    }
+    if (markStep === 0) { setPhase("pick"); return; }
+    const prev = markStep - 1;
+    setMarkStep(prev);
+    setMarkInput(marks[subjects[prev]] !== undefined ? String(marks[subjects[prev]]) : "");
+    setMarkError("");
   }
 
+  const card = (selected) => ({
+    display: "block", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+    padding: "12px 16px", borderRadius: 12,
+    background: selected ? "rgba(99,102,241,0.1)" : "rgba(255,255,255,0.025)",
+    border: `1.5px solid ${selected ? T.borderActive : T.border}`,
+    color: selected ? T.accentLight : T.textPrimary,
+    fontSize: "0.88rem", transition: "all 0.12s ease", outline: "none",
+    marginBottom: 0,
+  });
+
+  // ── Phase: subject picker ────────────────────────────────────────────────
   if (phase === "pick") {
     return (
-      <div className="w-full">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Which subjects do you take?</h2>
-        <p className="text-gray-500 mb-6">Select all subjects you are currently studying.</p>
+      <div>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: T.accentLight, marginBottom: 12 }}>
+          Subjects & Marks
+        </p>
+        <h2 style={{ fontSize: "clamp(1.6rem, 5.5vw, 2.2rem)", fontWeight: 800, color: T.textPrimary, marginBottom: 8, lineHeight: 1.2 }}>
+          Which subjects do you take?
+        </h2>
+        <p style={{ color: T.textSecondary, fontSize: "0.92rem", marginBottom: 20 }}>
+          Select all the subjects you currently study.
+        </p>
 
-        <div className="relative mb-4">
+        {/* Search */}
+        <div style={{ position: "relative", marginBottom: 14 }}>
           <input
             type="text"
-            placeholder="Search subjects…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-2xl text-base focus:outline-none focus:border-emerald-500 transition-colors"
+            placeholder="Search subjects…"
+            style={{
+              width: "100%", boxSizing: "border-box",
+              background: "rgba(255,255,255,0.04)",
+              border: `1.5px solid ${T.border}`,
+              borderRadius: 12, color: T.textPrimary, fontFamily: "inherit",
+              fontSize: "0.95rem", padding: "12px 16px 12px 42px",
+              outline: "none", transition: "border-color 0.15s",
+              caretColor: T.accentLight,
+            }}
           />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">🔍</span>
+          <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: "1rem", opacity: 0.4 }}>🔍</span>
         </div>
 
+        {/* Conflict warning */}
         {hasMathConflict && (
-          <div className="mb-4 px-4 py-3 bg-amber-50 border-2 border-amber-300 rounded-2xl text-amber-700 text-sm font-medium">
+          <div style={{ padding: "10px 14px", background: "rgba(251,191,36,0.1)", border: "1.5px solid rgba(251,191,36,0.4)", borderRadius: 10, color: "#fbbf24", fontSize: "0.82rem", fontWeight: 500, marginBottom: 12 }}>
             You can't take both Mathematics and Mathematical Literacy. Please remove one.
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2 mb-5 min-h-[2.5rem]">
-          {subjects.length === 0 ? (
-            <p className="text-gray-400 text-sm italic">No subjects selected yet</p>
-          ) : subjects.map(s => (
-            <button
-              key={s}
-              onClick={() => toggleSubject(s)}
-              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 border-2 border-emerald-400 text-emerald-700 rounded-full text-sm font-medium transition-all hover:bg-red-50 hover:border-red-300 hover:text-red-600"
-            >
-              {s} <span className="text-xs">×</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="text-sm text-gray-500 mb-3 flex items-center gap-2">
-          <span className="font-semibold text-gray-700">{subjects.length}</span> selected
-          {subjects.length < 5 && (
-            <span className="text-amber-600">— add at least {5 - subjects.length} more</span>
-          )}
-          {subjects.length >= 5 && !hasMathConflict && (
-            <span className="text-emerald-600 font-medium">— ready to continue</span>
-          )}
-        </div>
-
-        <div className="max-h-64 overflow-y-auto border-2 border-gray-100 rounded-2xl divide-y divide-gray-50">
-          {filteredSubjects.map(s => {
-            const selected = subjects.includes(s);
-            return (
+        {/* Selected chips */}
+        {subjects.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+            {subjects.map(s => (
               <button
                 key={s}
                 onClick={() => toggleSubject(s)}
-                className={`w-full text-left px-4 py-3 flex items-center justify-between transition-colors
-                  ${selected ? "bg-emerald-50 text-emerald-700 font-medium" : "bg-white text-gray-700 hover:bg-gray-50"}`}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  padding: "5px 10px", borderRadius: 20,
+                  background: "rgba(99,102,241,0.15)", border: `1px solid ${T.borderActive}`,
+                  color: T.accentLight, fontSize: "0.78rem", fontWeight: 600,
+                  cursor: "pointer", fontFamily: "inherit", transition: "all 0.12s",
+                }}
               >
-                <span>{s}</span>
-                {selected && <span className="text-emerald-500 text-lg">✓</span>}
+                {s} <span style={{ opacity: 0.7 }}>×</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Count indicator */}
+        <div style={{ fontSize: "0.8rem", color: T.textMuted, marginBottom: 10, display: "flex", gap: 6, alignItems: "center" }}>
+          <span style={{ fontWeight: 700, color: T.textSecondary }}>{subjects.length}</span> selected
+          {subjects.length < 5 && (
+            <span style={{ color: "#fbbf24" }}>— need at least {5 - subjects.length} more</span>
+          )}
+          {subjects.length >= 5 && !hasMathConflict && (
+            <span style={{ color: T.green, fontWeight: 600 }}>— ready to continue</span>
+          )}
+        </div>
+
+        {/* Subject list */}
+        <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6, paddingRight: 2 }}>
+          {filteredSubjects.map(s => {
+            const sel = subjects.includes(s);
+            return (
+              <button key={s} onClick={() => toggleSubject(s)} style={card(sel)}>
+                <span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  {s}
+                  {sel && <span style={{ color: T.accentLight, fontSize: "1rem" }}>✓</span>}
+                </span>
               </button>
             );
           })}
           {filteredSubjects.length === 0 && (
-            <p className="px-4 py-6 text-center text-gray-400 text-sm">No subjects match "{search}"</p>
+            <p style={{ textAlign: "center", color: T.textMuted, fontSize: "0.88rem", padding: "24px 0" }}>No subjects match "{search}"</p>
           )}
         </div>
 
         <button
           onClick={startMarks}
-          disabled={!canProceedToPick()}
-          className="mt-6 w-full py-4 bg-emerald-600 text-white text-lg font-semibold rounded-2xl hover:bg-emerald-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          disabled={subjects.length < 5 || hasMathConflict}
+          style={{
+            marginTop: 20, width: "100%", border: "none", borderRadius: 14, fontFamily: "inherit",
+            fontSize: "1.05rem", fontWeight: 700, padding: "16px",
+            background: subjects.length >= 5 && !hasMathConflict
+              ? "linear-gradient(135deg, #6366f1, #818cf8)"
+              : "rgba(99,102,241,0.2)",
+            color: subjects.length >= 5 && !hasMathConflict ? "#fff" : "rgba(255,255,255,0.25)",
+            cursor: subjects.length >= 5 && !hasMathConflict ? "pointer" : "not-allowed",
+            boxShadow: subjects.length >= 5 && !hasMathConflict ? "0 4px 28px rgba(99,102,241,0.4)" : "none",
+            transition: "all 0.2s ease",
+          }}
         >
           Continue — Enter My Marks →
         </button>
@@ -156,27 +195,34 @@ export default function SubjectSection({ subjects, marks, onSubjectsChange, onMa
     );
   }
 
-  // Phase: marks
+  // ── Phase: marks entry ───────────────────────────────────────────────────
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm text-gray-400 font-medium">{markStep + 1} of {subjects.length}</p>
-        <div className="flex gap-1">
+    <div>
+      {/* Per-subject progress dots */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: T.accentLight }}>
+          Subject {markStep + 1} of {subjects.length}
+        </p>
+        <div style={{ display: "flex", gap: 4 }}>
           {subjects.map((_, i) => (
-            <div
-              key={i}
-              className={`h-1.5 rounded-full transition-all ${
-                i < markStep ? "w-5 bg-emerald-500" : i === markStep ? "w-5 bg-emerald-400" : "w-3 bg-gray-200"
-              }`}
-            />
+            <div key={i} style={{
+              height: 4, borderRadius: 4, transition: "all 0.2s",
+              width: i === markStep ? 20 : 8,
+              background: i < markStep ? "#6366f1" : i === markStep ? "#a5b4fc" : "rgba(255,255,255,0.1)",
+            }} />
           ))}
         </div>
       </div>
 
-      <h2 className="text-3xl font-bold text-gray-900 mb-1 mt-4">{currentSubject}</h2>
-      <p className="text-gray-500 mb-8">What was your latest mark or predicted percentage?</p>
+      <h2 style={{ fontSize: "clamp(1.6rem, 5.5vw, 2.2rem)", fontWeight: 800, color: T.textPrimary, marginBottom: 6, lineHeight: 1.2 }}>
+        {currentSubject}
+      </h2>
+      <p style={{ color: T.textSecondary, fontSize: "0.9rem", marginBottom: 28 }}>
+        What was your latest mark or predicted percentage?
+      </p>
 
-      <div className="relative mb-3">
+      {/* Big number input */}
+      <div style={{ position: "relative", textAlign: "center", marginBottom: 8 }}>
         <input
           type="number"
           min={0}
@@ -184,45 +230,70 @@ export default function SubjectSection({ subjects, marks, onSubjectsChange, onMa
           value={markInput}
           onChange={e => { setMarkInput(e.target.value); setMarkError(""); }}
           onKeyDown={e => e.key === "Enter" && validateAndAdvance()}
-          placeholder="e.g. 72"
+          placeholder="—"
           autoFocus
-          className="w-full text-5xl font-bold text-center border-b-4 border-gray-200 focus:border-emerald-500 outline-none py-4 bg-transparent transition-colors placeholder-gray-200"
+          style={{
+            width: "100%", background: "transparent", border: "none",
+            borderBottom: `3px solid ${markInput ? "#6366f1" : "rgba(255,255,255,0.12)"}`,
+            color: T.textPrimary, fontFamily: "inherit", outline: "none",
+            fontSize: "clamp(3rem, 14vw, 5rem)", fontWeight: 900,
+            textAlign: "center", padding: "8px 0",
+            boxSizing: "border-box", caretColor: "#a5b4fc",
+            transition: "border-color 0.2s",
+          }}
         />
-        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-3xl font-bold text-gray-300">%</span>
+        <span style={{
+          position: "absolute", right: 0, bottom: 16,
+          fontSize: "1.8rem", fontWeight: 700, color: "rgba(255,255,255,0.2)",
+        }}>%</span>
       </div>
 
+      {/* Slider */}
       <input
         type="range"
         min={0}
         max={100}
         value={markInput === "" ? 0 : Math.min(100, Math.max(0, Number(markInput)))}
         onChange={e => { setMarkInput(e.target.value); setMarkError(""); }}
-        className="w-full accent-emerald-500 mb-4"
+        style={{ width: "100%", accentColor: "#6366f1", marginBottom: 14 }}
       />
 
+      {/* Achievement badge */}
       {achievement && (
-        <div
-          className="text-center py-3 px-4 rounded-2xl text-sm font-semibold transition-all"
-          style={{ backgroundColor: achievement.color + "18", color: achievement.color }}
-        >
+        <div style={{
+          textAlign: "center", padding: "10px 16px", borderRadius: 10,
+          background: achievement.color + "18", color: achievement.color,
+          fontSize: "0.88rem", fontWeight: 700, border: `1px solid ${achievement.color}40`,
+          marginBottom: 8,
+        }}>
           {achievement.label} &nbsp;·&nbsp; {achievement.range}
         </div>
       )}
 
       {markError && (
-        <p className="mt-3 text-red-500 text-sm text-center">{markError}</p>
+        <p style={{ textAlign: "center", color: "#f87171", fontSize: "0.85rem", marginBottom: 8 }}>{markError}</p>
       )}
 
-      <div className="mt-8 flex gap-3">
+      <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
         <button
           onClick={goBackInMarks}
-          className="px-5 py-4 text-gray-500 text-sm font-medium hover:text-gray-800 transition-colors"
+          style={{
+            padding: "14px 18px", background: "none", border: `1.5px solid ${T.border}`,
+            borderRadius: 12, color: T.textMuted, fontSize: "0.88rem", fontWeight: 600,
+            cursor: "pointer", fontFamily: "inherit", transition: "border-color 0.15s, color 0.15s",
+          }}
         >
           ← Back
         </button>
         <button
           onClick={validateAndAdvance}
-          className="flex-1 py-4 bg-emerald-600 text-white text-lg font-semibold rounded-2xl hover:bg-emerald-700 transition-colors"
+          style={{
+            flex: 1, border: "none", borderRadius: 12, fontFamily: "inherit",
+            fontSize: "1rem", fontWeight: 700, padding: "14px",
+            background: "linear-gradient(135deg, #6366f1, #818cf8)",
+            color: "#fff", cursor: "pointer",
+            boxShadow: "0 4px 20px rgba(99,102,241,0.4)",
+          }}
         >
           {markStep < subjects.length - 1 ? "Next Subject →" : "Done with Marks →"}
         </button>

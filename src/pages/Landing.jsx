@@ -138,6 +138,13 @@ export default function Landing() {
         background: "linear-gradient(70deg, rgba(4,4,10,0.97) 0%, rgba(4,4,10,0.97) 72%, rgba(4,4,10,0.88) 80%, rgba(4,4,10,0.40) 88%, rgba(4,4,10,0.04) 94%, rgba(4,4,10,0.0) 100%)",
       }} />
 
+      {/* ── Mobile only: white fade from top → transparent, stops at brand name level ── */}
+      <div className="m2c-white-fade" style={{
+        position: "absolute", top: 0, left: 0, right: 0,
+        pointerEvents: "none", display: "none",
+        zIndex: 7,
+      }} />
+
       {/* ── Indigo depth accents ── */}
       <div style={{
         position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none",
@@ -161,11 +168,11 @@ export default function Landing() {
           style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center" }}
           onError={(e) => { e.currentTarget.parentElement.style.display = "none"; }}
         />
-        {/* top + bottom edge fades to cover white bg */}
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none",
+        {/* top + bottom edge fades (desktop: dark bg blend; mobile: transparent so flag shows) */}
+        <div className="m2c-img-fade-tb" style={{ position: "absolute", inset: 0, pointerEvents: "none",
           background: "linear-gradient(to bottom, #06060b 0%, transparent 12%, transparent 82%, #06060b 100%)" }} />
         {/* right edge fade */}
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none",
+        <div className="m2c-img-fade-r" style={{ position: "absolute", inset: 0, pointerEvents: "none",
           background: "linear-gradient(to left, #06060b 0%, transparent 18%)" }} />
       </div>
 
@@ -529,17 +536,30 @@ export default function Landing() {
             padding-top: 8vh !important;
             padding-bottom: 175px !important;
           }
-          /* Dark top (brand readable) → vivid middle (flag shows) → dark bottom (button readable) */
+          /* Let flag breathe at the top — only darken toward bottom for button/tile readability */
           .m2c-overlay {
             background: linear-gradient(
               to bottom,
-              rgba(4,4,10,0.80) 0%,
-              rgba(4,4,10,0.68) 16%,
-              rgba(4,4,10,0.38) 30%,
-              rgba(4,4,10,0.38) 46%,
-              rgba(4,4,10,0.76) 60%,
-              rgba(4,4,10,0.90) 100%
+              rgba(4,4,10,0.0)  0%,
+              rgba(4,4,10,0.0)  18%,
+              rgba(4,4,10,0.22) 32%,
+              rgba(4,4,10,0.50) 52%,
+              rgba(4,4,10,0.82) 72%,
+              rgba(4,4,10,0.94) 100%
             ) !important;
+          }
+          /* White-to-transparent fade: top → just past the brand name (~26vh) */
+          .m2c-white-fade {
+            display: block !important;
+            height: 30vh;
+            background: linear-gradient(
+              to bottom,
+              rgba(255,255,255,0.80) 0%,
+              rgba(255,255,255,0.62) 18%,
+              rgba(255,255,255,0.28) 55%,
+              rgba(255,255,255,0.06) 82%,
+              transparent 100%
+            );
           }
           /* Pull button to vertical center of the screen */
           .m2c-btn {
@@ -553,18 +573,29 @@ export default function Landing() {
             padding: 0 0.85rem 1rem !important;
           }
           .m2c-tile { padding: 0.55rem 0.65rem !important; }
-          /* Student behind overlay — same gradient treatment as the flag */
-          .m2c-students-container { width: 78% !important; z-index: 2 !important; }
+          /* Students: smaller, contained, bottom-right — more flag visible above */
+          .m2c-students-container {
+            width: 62% !important;
+            top: auto !important;
+            height: 52vh !important;
+            background: transparent !important;
+            z-index: 2 !important;
+          }
           .m2c-students-img {
+            object-fit: contain !important;
+            object-position: bottom right !important;
             animation: m2cImgReveal 1.3s cubic-bezier(0.16,1,0.3,1) 0.55s forwards !important;
-            mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.14) 22%, rgba(0,0,0,0.92) 58%) !important;
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.14) 22%, rgba(0,0,0,0.92) 58%) !important;
+            /* fade top-edge so student blends into flag above */
+            mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 10%, black 28%) !important;
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 10%, black 28%) !important;
           }
           /* Scale brand slightly for narrow screens */
           .m2c-brand { font-size: clamp(2.2rem, 10.5vw, 3rem) !important; }
-          /* Text shadow for readability over lighter middle zone */
-          .m2c-slogan { text-shadow: 0 1px 10px rgba(0,0,0,0.88) !important; }
+          /* Slogan + proof: strong shadow so white text reads over faded white zone */
+          .m2c-slogan { text-shadow: 0 1px 12px rgba(0,0,0,0.95) !important; }
           .m2c-proof span { text-shadow: 0 1px 8px rgba(0,0,0,0.88) !important; }
+          /* Hide desktop dark-bg blends inside student container; image mask handles it */
+          .m2c-img-fade-tb, .m2c-img-fade-r { display: none !important; }
         }
         @media (max-width: 340px) {
           .m2c-tiles { grid-template-columns: 1fr !important; }

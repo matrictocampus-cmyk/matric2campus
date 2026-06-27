@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ClipboardList, GraduationCap, BarChart2, BookOpen } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Login from "./Auth/Login";
 import Register from "./Auth/Register";
 
@@ -20,6 +21,7 @@ const FEATURES = [
 ];
 
 export default function Landing() {
+  const navigate = useNavigate();
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState("register");
 
@@ -204,7 +206,7 @@ export default function Landing() {
         </p>
 
         {/* CTA */}
-        <button className="m2c-btn" onClick={() => setShowAuth(true)}>
+        <button className="m2c-btn" onClick={() => navigate("/onboarding")}>
           Start Quiz&nbsp;<span className="m2c-arrow">→</span>
         </button>
 

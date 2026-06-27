@@ -8,6 +8,7 @@ import AdminLayout from "./pages/Admin/AdminLayout";
 
 // Pages – Public
 import Landing from "./pages/Landing";
+import OnboardingFlow from "./pages/Onboarding/OnboardingFlow";
 
 // Pages – Student
 import Dashboard from "./pages/Dashboard";
@@ -98,6 +99,7 @@ export default function App() {
   if (!session) {
     return (
       <Routes>
+        <Route path="/onboarding" element={<OnboardingFlow />} />
         <Route path="*" element={<Landing />} />
       </Routes>
     );

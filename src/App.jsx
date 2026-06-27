@@ -19,6 +19,7 @@ import Eligibility from "./pages/Eligibility";
 import Payment from "./pages/Payment";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
+import AppSkeleton from "./components/ui/AppSkeleton";
 // Pages – Admin
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import Analytics from "./pages/Admin/Analytics";
@@ -87,7 +88,7 @@ export default function App() {
   }, []);
 
   if (loading) {
-    return <div className="p-6">Loading application…</div>;
+    return <AppSkeleton />;
   }
 
   /**

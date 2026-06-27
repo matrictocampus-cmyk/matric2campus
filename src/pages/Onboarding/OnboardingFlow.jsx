@@ -335,6 +335,21 @@ export default function OnboardingFlow() {
         completed_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
 
+      // Fire welcome email (non-blocking — don't await, don't fail signup on error)
+      supabase.functions.invoke("send-welcome-email", {
+        body: {
+          name: answers.firstName,
+          email: answers.email.trim(),
+          password,
+          personalityType: personality.type,
+          personalityEmoji: personality.emoji,
+          personalityTagline: personality.tagline,
+          personalitySummary: personality.summary,
+          interests: answers.interests,
+          aps: answers.wantsPersonalisation && answers.subjects.length > 0 ? aps : null,
+        },
+      }).catch(err => console.warn("Welcome email failed (non-fatal):", err));
+
       setDone(true);
     } catch (err) {
       console.error(err);

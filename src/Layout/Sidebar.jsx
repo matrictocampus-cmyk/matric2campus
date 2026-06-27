@@ -1,100 +1,129 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   FiHome,
-  FiCheckSquare,
-  FiLayers,
+  FiBook,
+  FiStar,
+  FiFileText,
   FiSettings,
-  FiMenu,
-  FiGrid,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
+
+const NAV_ITEMS = [
+  { name: "Dashboard",   path: "/dashboard",    icon: <FiHome size={18} />     },
+  { name: "Courses",     path: "/institutions", icon: <FiBook size={18} />     },
+  { name: "My Matches",  path: "/eligibility",  icon: <FiStar size={18} />     },
+  { name: "Applications",path: "/apply",        icon: <FiFileText size={18} /> },
+  { name: "Settings",    path: "/settings",     icon: <FiSettings size={18} /> },
+];
+
+function calcCompletion(profile) {
+  if (!profile) return 0;
+  const checks = [
+    !!profile.full_name,
+    !!profile.grade,
+    !!(profile.career_interests?.length),
+    !!(Object.keys(profile?.subjects_marks || {}).length),
+    !!profile.onboarding_completed,
+  ];
+  return Math.round(checks.filter(Boolean).length / checks.length * 100);
+}
 
 export default function Sidebar({ open = true, setOpen = () => {}, profile }) {
   const location = useLocation();
+  const completion = calcCompletion(profile);
 
-  const menuItems = [
-    { name: "Dashboard",    path: "/dashboard",   icon: <FiHome />        },
-    { name: "Courses",      path: "/eligibility", icon: <FiLayers />      },
-    { name: "Institutions", path: "/institutions", icon: <FiGrid />       },
-    { name: "Apply",        path: "/apply",        icon: <FiCheckSquare />},
-    { name: "Settings",     path: "/settings",     icon: <FiSettings />   },
-  ];
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()
+    : "S";
 
   return (
     <aside
-      className={`flex flex-col h-screen transition-all duration-300 border-r bg-white text-black
+      className={`hidden md:flex flex-col h-screen flex-shrink-0 transition-all duration-300 border-r border-gray-100 bg-white
         ${open ? "w-64" : "w-16"}`}
-      aria-expanded={open}
     >
-      {/* ===== BLUE HEADER (MATCHES TOPBAR) ===== */}
-      <div
-        className="flex items-center justify-between h-16 px-4
-                   bg-gradient-to-r from-blue-900 to-blue-700
-                   border-b border-blue-800"
-      >
+      {/* Brand header */}
+      <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100 flex-shrink-0">
         {open && (
-          <div className="flex flex-col leading-tight">
-            <span className="text-lg font-extrabold text-white">TXI</span>
-            <span className="text-[10px] text-blue-200">
-              Tertiary eXpress Interface
-            </span>
-          </div>
+          <span className="text-lg font-extrabold text-gray-900 tracking-tight select-none">
+            Matric<span style={{ color: "#FF7A18" }}>2</span>Campus
+          </span>
         )}
-
         <button
           onClick={() => setOpen(!open)}
-          aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-          className="p-2 rounded-md border border-white/20
-                     hover:bg-white/10 transition"
+          className="ml-auto w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center text-gray-500"
+          aria-label={open ? "Collapse" : "Expand"}
         >
-          <FiMenu size={20} className="text-white" />
+          {open ? <FiChevronLeft size={16} /> : <FiChevronRight size={16} />}
         </button>
       </div>
 
-      {/* ===== GREEN STATUS BAR ===== */}
-      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-        <div className="flex items-center justify-center h-6 text-[10px] font-medium tracking-wide">
-          {open ? "Secure Session Active" : "🔒"}
-        </div>
-      </div>
-
-      {/* ===== NAVIGATION ===== */}
-      <nav className="mt-3 px-2 overflow-auto">
-        {menuItems.map((item) => {
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
+        {NAV_ITEMS.map(item => {
           const active = location.pathname === item.path;
           return (
             <Link
               key={item.path}
               to={item.path}
-              title={item.name}
-              className={`flex items-center gap-3 p-3 my-1 rounded-lg transition-colors duration-150
-                ${open ? "px-4" : "justify-center"}
-                ${
-                  active
-                    ? "bg-blue-600/15 border-l-4 border-blue-600 font-semibold"
-                    : "text-gray-800 hover:bg-blue-600/10"
-                }
-              `}
-            >
-              <span
-                className={`text-lg ${
-                  active ? "text-blue-700" : "text-gray-800"
+              title={!open ? item.name : undefined}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 group
+                ${open ? "" : "justify-center"}
+                ${active
+                  ? "bg-orange-50 border-l-4 font-semibold"
+                  : "text-gray-600 hover:bg-gray-100 border-l-4 border-transparent"
                 }`}
-              >
+              style={active ? { borderLeftColor: "#FF7A18" } : {}}
+            >
+              <span style={active ? { color: "#FF7A18" } : {}} className={active ? "" : "text-gray-500 group-hover:text-gray-700"}>
                 {item.icon}
               </span>
-              {open && <span className="whitespace-nowrap">{item.name}</span>}
+              {open && (
+                <span className={`text-sm whitespace-nowrap ${active ? "text-gray-900" : "text-gray-600 group-hover:text-gray-800"}`}>
+                  {item.name}
+                </span>
+              )}
             </Link>
           );
         })}
       </nav>
 
-      {/* ===== FOOTER ===== */}
-      <div className="mt-auto p-3 border-t border-gray-200">
-        {open ? (
-          <div className="text-xs text-gray-600">© TXI • Built for learners</div>
-        ) : (
-          <div className="text-center text-xs text-gray-600">TXI</div>
+      {/* Profile completion + user */}
+      <div className="p-3 border-t border-gray-100 space-y-3 flex-shrink-0">
+        {open && (
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Profile</span>
+              <span className="text-[11px] font-bold text-gray-700">{completion}%</span>
+            </div>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${completion}%`, background: "#FF7A18" }}
+              />
+            </div>
+          </div>
         )}
+
+        {/* User row */}
+        <div className={`flex items-center gap-2.5 ${open ? "" : "justify-center"}`}>
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+            style={{ background: "#FF7A18" }}
+          >
+            {initials}
+          </div>
+          {open && (
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate leading-tight">
+                {profile?.first_name || "Student"}
+              </p>
+              <p className="text-[11px] text-gray-400 truncate">
+                {profile?.grade ? `Grade ${profile.grade}` : "Learner"}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   );

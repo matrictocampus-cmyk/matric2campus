@@ -22,7 +22,6 @@ function calcAPS(subjectsMarks) {
   }, 0);
 }
 
-// Map career interest IDs to keywords for matching institution_courses.category
 const INTEREST_KEYWORDS = {
   tech:        ["tech", "computer", "software", "information", "digital", "data", "it"],
   health:      ["health", "medical", "nursing", "pharmacy", "medicine", "clinical", "biomedical"],
@@ -63,9 +62,9 @@ const PERSONALITY_STYLE = {
 };
 
 const TERM_REMINDER = {
-  1: "Your Term 1 results are live and your recommendations are ready. As Term 2, Term 3, and Term 4 marks come in, pop back and update them for sharper results.",
-  2: "Your results are already giving you useful recommendations. Update after Term 3 and Term 4 to keep them as accurate as possible.",
-  3: "Almost at final results. One more update after Term 4 and your recommendations will be as sharp as they can get.",
+  1: "As Term 2, 3, and 4 marks come in, pop back and update them for sharper recommendations.",
+  2: "Update after Term 3 and Term 4 to keep your recommendations as accurate as possible.",
+  3: "One more update after Term 4 and your recommendations will be as sharp as they can get.",
 };
 
 const BUNDLE_STATUS = {
@@ -80,7 +79,7 @@ const BUNDLE_STATUS = {
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [data, setData]     = useState(null);
+  const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -121,7 +120,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto p-6 space-y-4 animate-pulse">
+      <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-4 animate-pulse">
         <div className="h-24 bg-gray-100 rounded-2xl" />
         <div className="grid grid-cols-3 gap-3">
           {[0,1,2].map(i => <div key={i} className="h-20 bg-gray-100 rounded-xl" />)}
@@ -134,20 +133,19 @@ export default function Dashboard() {
 
   const { profile, courses, bundle, bucketCount, activeApps } = data || {};
 
-  const firstName      = profile?.first_name || "there";
-  const hour           = new Date().getHours();
-  const greeting       = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const aps            = profile?.aps_score ?? calcAPS(profile?.subjects_marks);
-  const subjectCount   = Object.keys(profile?.subjects_marks || {}).length;
-  const interests      = profile?.career_interests || [];
-  const personality    = profile?.personality_type || null;
-  const grade          = profile?.grade || null;
-  const province       = profile?.province || null;
-  const resultsTerm    = profile?.results_term || null;
-  const hasOnboarding  = !!(profile?.onboarding_completed);
+  const firstName     = profile?.first_name || "there";
+  const hour          = new Date().getHours();
+  const greeting      = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const aps           = profile?.aps_score ?? calcAPS(profile?.subjects_marks);
+  const subjectCount  = Object.keys(profile?.subjects_marks || {}).length;
+  const interests     = profile?.career_interests || [];
+  const personality   = profile?.personality_type || null;
+  const grade         = profile?.grade || null;
+  const province      = profile?.province || null;
+  const resultsTerm   = profile?.results_term || null;
+  const hasOnboarding = !!(profile?.onboarding_completed);
   const personalityStyle = PERSONALITY_STYLE[personality] || "bg-gray-50 text-gray-600 border-gray-200";
 
-  // Matched courses: filter by career interest keywords + APS if available
   const matchedCourses = courses
     .filter(c => interestsMatchCategory(interests, c.category || c.title || ""))
     .filter(c => {
@@ -160,7 +158,7 @@ export default function Dashboard() {
   const needsOnboarding  = !hasOnboarding;
 
   return (
-    <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-5">
+    <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-4">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -168,77 +166,92 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
             {greeting}, {firstName}
           </h1>
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            {personality && (
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${personalityStyle}`}>
-                {personality}
-              </span>
-            )}
-            {grade && <span className="text-xs text-gray-400">{grade}</span>}
-            {province && <span className="text-xs text-gray-400">· {province}</span>}
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            {grade && <span className="text-sm text-gray-500">Grade {grade}</span>}
+            {province && <span className="text-sm text-gray-400">· {province}</span>}
           </div>
         </div>
         {aps > 0 && (
           <div className="text-center bg-gray-900 text-white rounded-xl px-5 py-3 min-w-[72px]">
-            <p className="text-[10px] font-semibold uppercase tracking-widest opacity-60">APS</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest opacity-50">APS</p>
             <p className="text-3xl font-extrabold leading-none">{aps}</p>
           </div>
         )}
       </div>
 
-      {/* ── No onboarding → single CTA ────────────────────────────────────── */}
+      {/* ── Personality card ───────────────────────────────────────────────── */}
+      {hasOnboarding && personality && (
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-start gap-3">
+          <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ background: "#FF7A18" }} />
+          <div className="min-w-0">
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border inline-block ${personalityStyle}`}>
+              {personality}
+            </span>
+            {profile?.personality_tagline && (
+              <p className="text-sm font-semibold text-gray-900 mt-2 leading-snug">
+                "{profile.personality_tagline}"
+              </p>
+            )}
+            {profile?.personality_summary && (
+              <p className="text-sm text-gray-500 mt-1 leading-relaxed line-clamp-2">
+                {profile.personality_summary}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── No onboarding CTA ──────────────────────────────────────────────── */}
       {needsOnboarding && (
-        <div className="bg-gray-950 text-white rounded-2xl p-6 flex items-center justify-between gap-4">
+        <div className="bg-gray-950 text-white rounded-2xl p-5 flex items-center justify-between gap-4">
           <div>
             <p className="font-bold text-base">Complete your quiz first</p>
             <p className="text-sm text-white/60 mt-1">
-              Takes 3 minutes. We'll build your personalised roadmap from your answers.
+              3 minutes. We'll build your personalised roadmap from your answers.
             </p>
           </div>
           <button
             onClick={() => navigate("/onboarding")}
-            className="flex-shrink-0 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap"
+            className="flex-shrink-0 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+            style={{ background: "#FF7A18" }}
           >
             Start quiz
           </button>
         </div>
       )}
 
-      {/* ── Stats row ──────────────────────────────────────────────────────── */}
-      {hasOnboarding && (
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white border border-gray-100 rounded-xl p-4 text-center shadow-sm">
-            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">APS</p>
-            <p className="text-2xl font-extrabold text-gray-900 mt-0.5">{aps || "—"}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">out of ~42</p>
-          </div>
-          <div className="bg-white border border-gray-100 rounded-xl p-4 text-center shadow-sm">
-            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Subjects</p>
-            <p className="text-2xl font-extrabold text-gray-900 mt-0.5">{subjectCount || "—"}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">recorded</p>
-          </div>
-          <div className="bg-white border border-gray-100 rounded-xl p-4 text-center shadow-sm">
-            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Interests</p>
-            <p className="text-2xl font-extrabold text-gray-900 mt-0.5">{interests.length || "—"}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">selected</p>
-          </div>
-        </div>
-      )}
-
       {/* ── Term reminder ──────────────────────────────────────────────────── */}
       {showTermReminder && (
-        <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 flex items-start gap-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0 mt-1.5" />
-          <p className="text-sm text-indigo-700 leading-relaxed">
+        <div className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-3 flex items-start gap-3">
+          <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2" style={{ background: "#FF7A18" }} />
+          <p className="text-sm text-orange-800 leading-relaxed">
             <span className="font-semibold">Term {resultsTerm} results saved.</span>{" "}
             {TERM_REMINDER[resultsTerm]}
           </p>
         </div>
       )}
 
+      {/* ── Stats row ──────────────────────────────────────────────────────── */}
+      {hasOnboarding && (
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "APS Score",  value: aps || "—",          sub: "out of ~42"  },
+            { label: "Subjects",   value: subjectCount || "—",  sub: "recorded"    },
+            { label: "Interests",  value: interests.length || "—", sub: "selected" },
+          ].map(({ label, value, sub }) => (
+            <div key={label} className="bg-white border border-gray-100 rounded-xl p-4 text-center shadow-sm">
+              <div className="h-0.5 w-6 rounded-full mx-auto mb-3" style={{ background: "#FF7A18" }} />
+              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">{label}</p>
+              <p className="text-2xl font-extrabold text-gray-900 mt-0.5">{value}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── Active application ─────────────────────────────────────────────── */}
       {bundle && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-3">
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <p className="font-semibold text-gray-900 text-sm">
               Application #{bundle.bundle_ref || bundle.id.slice(0, 8)}
@@ -250,7 +263,7 @@ export default function Dashboard() {
           {activeApps.length > 0 && (
             <div className="space-y-1.5">
               {activeApps.map(app => (
-                <div key={app.id} className="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                <div key={app.id} className="flex items-center justify-between gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{app.course_title}</p>
                     <p className="text-xs text-gray-400">{app.institution_name}</p>
@@ -264,7 +277,8 @@ export default function Dashboard() {
           )}
           <button
             onClick={() => navigate("/apply")}
-            className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+            className="text-sm font-semibold transition-colors"
+            style={{ color: "#FF7A18" }}
           >
             View application details →
           </button>
@@ -273,7 +287,7 @@ export default function Dashboard() {
 
       {/* ── Bucket ready ───────────────────────────────────────────────────── */}
       {!bundle && bucketCount > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between gap-4 shadow-sm">
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 flex items-center justify-between gap-4 shadow-sm">
           <div>
             <p className="font-semibold text-gray-900">
               {bucketCount} course{bucketCount !== 1 ? "s" : ""} saved
@@ -282,7 +296,8 @@ export default function Dashboard() {
           </div>
           <button
             onClick={() => navigate("/apply")}
-            className="flex-shrink-0 bg-gray-900 hover:bg-gray-700 text-white font-semibold text-sm px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap"
+            className="flex-shrink-0 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap"
+            style={{ background: "#FF7A18" }}
           >
             Apply now
           </button>
@@ -296,13 +311,13 @@ export default function Dashboard() {
             <p className="font-semibold text-gray-900">Recommended for you</p>
             <button
               onClick={() => navigate("/eligibility")}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition-colors"
+              className="text-xs font-semibold transition-colors"
+              style={{ color: "#FF7A18" }}
             >
               Browse all →
             </button>
           </div>
 
-          {/* Interest tags */}
           {interests.length > 0 && (
             <div className="flex gap-2 flex-wrap">
               {interests.map(id => (
@@ -319,7 +334,10 @@ export default function Dashboard() {
                 const minAps = course.entry_requirements?.min_aps || course.entry_requirements?.aps;
                 const eligible = !minAps || aps === 0 || aps >= minAps;
                 return (
-                  <div key={course.id} className="bg-white border border-gray-100 rounded-xl px-4 py-3.5 flex items-center justify-between gap-3 shadow-sm hover:border-gray-300 transition-colors">
+                  <div
+                    key={course.id}
+                    className="bg-white border border-gray-100 rounded-xl px-4 py-3.5 flex items-center justify-between gap-3 shadow-sm hover:border-gray-200 hover:shadow transition-all"
+                  >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 leading-snug">{course.title}</p>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -339,7 +357,8 @@ export default function Dashboard() {
                       )}
                       <button
                         onClick={() => navigate("/eligibility")}
-                        className="text-xs text-indigo-600 font-semibold hover:text-indigo-800 whitespace-nowrap"
+                        className="text-xs font-semibold whitespace-nowrap"
+                        style={{ color: "#FF7A18" }}
                       >
                         View
                       </button>
@@ -350,13 +369,14 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center shadow-sm">
-              <p className="text-sm font-semibold text-gray-700">Find courses you qualify for</p>
+              <p className="text-sm font-semibold text-gray-800">Find courses you qualify for</p>
               <p className="text-sm text-gray-400 mt-1 mb-4">
-                Browse programmes matched to your APS of {aps > 0 ? aps : "…"} and your interests.
+                Browse programmes matched to your APS{aps > 0 ? ` of ${aps}` : ""} and interests.
               </p>
               <button
                 onClick={() => navigate("/eligibility")}
-                className="inline-flex items-center gap-1.5 bg-gray-900 hover:bg-gray-700 text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1.5 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-colors"
+                style={{ background: "#FF7A18" }}
               >
                 Browse eligible courses
               </button>
@@ -365,22 +385,22 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Need help ──────────────────────────────────────────────────────── */}
+      {/* ── Quick links ────────────────────────────────────────────────────── */}
       {hasOnboarding && !bundle && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 pb-2">
           <button
             onClick={() => navigate("/institutions")}
-            className="bg-white border border-gray-100 rounded-xl p-4 text-left hover:border-gray-300 transition-colors shadow-sm group"
+            className="bg-white border border-gray-100 rounded-xl p-4 text-left hover:border-gray-200 hover:shadow transition-all shadow-sm group"
           >
             <p className="text-sm font-semibold text-gray-900">Browse institutions</p>
-            <p className="text-xs text-gray-400 mt-0.5 group-hover:text-gray-500">Universities, colleges, TVET</p>
+            <p className="text-xs text-gray-400 mt-0.5">Universities, colleges, TVET</p>
           </button>
           <button
             onClick={() => navigate("/eligibility")}
-            className="bg-white border border-gray-100 rounded-xl p-4 text-left hover:border-gray-300 transition-colors shadow-sm group"
+            className="bg-white border border-gray-100 rounded-xl p-4 text-left hover:border-gray-200 hover:shadow transition-all shadow-sm group"
           >
             <p className="text-sm font-semibold text-gray-900">Check eligibility</p>
-            <p className="text-xs text-gray-400 mt-0.5 group-hover:text-gray-500">See every course you qualify for</p>
+            <p className="text-xs text-gray-400 mt-0.5">Every course you qualify for</p>
           </button>
         </div>
       )}

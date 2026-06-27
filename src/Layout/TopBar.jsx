@@ -1,212 +1,110 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import ConfirmSignOut from "../components/ui/ConfirmSignOut";
+import { FiBell, FiChevronDown, FiSettings, FiLogOut } from "react-icons/fi";
+
+const PAGE_TITLES = {
+  "/dashboard":    "Dashboard",
+  "/institutions": "Explore Courses",
+  "/eligibility":  "My Matches",
+  "/apply":        "Applications",
+  "/settings":     "Settings",
+};
 
 export default function Topbar({ profile }) {
   const navigate = useNavigate();
-
+  const location = useLocation();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleSignOutClick = () => {
-    setConfirmOpen(true);
-  };
+  const pageTitle = PAGE_TITLES[location.pathname] ?? "Matric2Campus";
 
-  const handleConfirmSignOut = async () => {
+  const handleSignOut = async () => {
     setConfirmOpen(false);
-
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.warn("Sign out error:", err);
-    } finally {
-      localStorage.removeItem("profile");
-      navigate("/login", { replace: true });
-    }
+    try { await supabase.auth.signOut(); } catch (_) {}
+    localStorage.removeItem("profile");
+    navigate("/", { replace: true });
   };
 
-  const handleCancel = () => {
-    setConfirmOpen(false);
-  };
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()
+    : "S";
 
   return (
     <>
-      {/* ===================== TOP BAR ===================== */}
-      <header className="w-full bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-6 flex-shrink-0 z-30">
+        <h1 className="text-lg font-bold text-gray-900 tracking-tight">{pageTitle}</h1>
 
-          {/* ===== Main Row ===== */}
-          <div className="flex items-center justify-between h-16">
+        <div className="flex items-center gap-2">
+          {/* Notification bell */}
+          <button className="relative w-9 h-9 rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center">
+            <FiBell size={18} className="text-gray-500" />
+            <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[#FF7A18]" />
+          </button>
 
-            {/* Left – Branding */}
-            <div className="flex items-center gap-3">
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
-                <i className="fas fa-user-graduate text-xl"></i>
+          {/* Avatar + dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-gray-100 transition-colors"
+            >
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                style={{ background: "#FF7A18" }}
+              >
+                {initials}
               </div>
+              <span className="hidden md:block text-sm font-semibold text-gray-800">
+                {profile?.first_name || "Student"}
+              </span>
+              <FiChevronDown
+                size={14}
+                className={`hidden md:block text-gray-400 transition-transform duration-200 ${menuOpen ? "rotate-180" : ""}`}
+              />
+            </button>
 
-              <div>
-                <h1 className="font-bold text-lg">
-                  CAO Application Assistant
-                </h1>
-
-                {profile?.full_name && (
-                  <div className="text-xs text-blue-100">
-                    Welcome back, {profile.full_name}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right – User Info */}
-            <div className="flex items-center gap-4">
-
-              {/* Stats */}
-              <div className="hidden md:flex items-center gap-2">
-                {profile?.grade && (
-                  <div className="bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 text-sm">
-                    <i className="fas fa-graduation-cap mr-1"></i>
-                    Grade {profile.grade}
-                  </div>
-                )}
-
-                {profile?.aps && (
-                  <div className="bg-white/10 backdrop-blur-sm rounded-full px-3 py-1 text-sm">
-                    <i className="fas fa-chart-line mr-1"></i>
-                    APS: {profile.aps}
-                  </div>
-                )}
-              </div>
-
-              {/* User Menu */}
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                    <i className="fas fa-user text-white"></i>
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                  {/* User info header */}
+                  <div className="px-4 py-3.5 border-b border-gray-100">
+                    <p className="font-semibold text-gray-900 text-sm truncate">
+                      {profile?.full_name || "Student"}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate mt-0.5">
+                      {profile?.email}
+                    </p>
                   </div>
 
-                  <div className="hidden md:block text-left">
-                    <div className="font-medium text-sm">
-                      {profile?.full_name || "User"}
-                    </div>
-                    <div className="text-xs text-blue-100 truncate max-w-[150px]">
-                      {profile?.email || "Loading..."}
-                    </div>
+                  {/* Menu items */}
+                  <button
+                    onClick={() => { setMenuOpen(false); navigate("/settings"); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <FiSettings size={15} className="text-gray-400" /> Settings
+                  </button>
+
+                  <div className="border-t border-gray-100">
+                    <button
+                      onClick={() => { setMenuOpen(false); setConfirmOpen(true); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <FiLogOut size={15} /> Sign out
+                    </button>
                   </div>
-
-                  <i
-                    className={`fas fa-chevron-down text-sm transition-transform ${
-                      userMenuOpen ? "rotate-180" : ""
-                    }`}
-                  ></i>
-                </button>
-
-                {/* Dropdown */}
-                {userMenuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setUserMenuOpen(false)}
-                    ></div>
-
-                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden">
-
-                      {/* User Info */}
-                      <div className="p-4 border-b border-gray-100">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
-                            <i className="fas fa-user text-white text-xl"></i>
-                          </div>
-                          <div>
-                            <div className="font-bold text-gray-900">
-                              {profile?.full_name || "User"}
-                            </div>
-                            <div className="text-sm text-gray-600 truncate">
-                              {profile?.email}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Menu */}
-                      <div className="py-2">
-                        <button
-                          onClick={() => navigate("/profile")}
-                          className="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 text-gray-700"
-                        >
-                          <i className="fas fa-user-edit text-blue-600"></i>
-                          Edit Profile
-                        </button>
-
-                        <button
-                          onClick={() => navigate("/eligibility")}
-                          className="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 text-gray-700"
-                        >
-                          <i className="fas fa-clipboard-check text-green-600"></i>
-                          Eligibility Check
-                        </button>
-
-                        <button
-                          onClick={() => navigate("/apply")}
-                          className="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 text-gray-700"
-                        >
-                          <i className="fas fa-paper-plane text-purple-600"></i>
-                          Apply Now
-                        </button>
-                      </div>
-
-                      {/* Sign Out */}
-                      <div className="border-t border-gray-100 p-4">
-                        <button
-                          onClick={handleSignOutClick}
-                          className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 hover:opacity-90"
-                        >
-                          <i className="fas fa-sign-out-alt"></i>
-                          Sign Out
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>
 
-      {/* ===================== GREEN STATUS BAR ===================== */}
-      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-1 text-xs">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <i className="fas fa-shield-alt"></i> Secure Session
-              </div>
-              <div className="flex items-center gap-1">
-                <i className="fas fa-database"></i> Local Storage Only
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <i className="fas fa-clock"></i>
-              Session:{" "}
-              {new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ===================== SIGN OUT MODAL ===================== */}
       <ConfirmSignOut
         open={confirmOpen}
-        onConfirm={handleConfirmSignOut}
-        onCancel={handleCancel}
+        onConfirm={handleSignOut}
+        onCancel={() => setConfirmOpen(false)}
       />
     </>
   );

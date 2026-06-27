@@ -8,7 +8,7 @@ function isRateLimit(err) {
   return /too many|rate.limit|wait.*second|security purposes/i.test(err.message || "");
 }
 
-export default function Login({ onRegisterClick }) {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -103,18 +103,9 @@ export default function Login({ onRegisterClick }) {
         ) : "Sign In"}
       </button>
 
-      {onRegisterClick && (
-        <p className="text-center text-sm text-gray-600">
-          Don't have an account?{" "}
-          <button
-            type="button"
-            onClick={onRegisterClick}
-            className="text-emerald-600 font-semibold hover:underline"
-          >
-            Create one free
-          </button>
-        </p>
-      )}
+      <p className="text-center text-xs text-gray-400">
+        New here? <span className="font-medium">Take the quiz</span> to create your profile.
+      </p>
     </form>
   );
 }

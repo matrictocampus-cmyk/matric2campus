@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { ClipboardList, GraduationCap, BarChart2, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Login from "./Auth/Login";
-import Register from "./Auth/Register";
 
 const SAFlag = () => (
   <img
@@ -23,7 +22,6 @@ const FEATURES = [
 export default function Landing() {
   const navigate = useNavigate();
   const [showAuth, setShowAuth] = useState(false);
-  const [authMode, setAuthMode] = useState("register");
 
   const canvasRef   = useRef(null);
   const contentRef  = useRef(null);
@@ -274,27 +272,7 @@ export default function Landing() {
               cursor: "pointer", lineHeight: 1, fontWeight: 300,
             }}>×</button>
 
-            <div style={{
-              display: "flex", gap: "1.5rem",
-              marginBottom: "1.5rem",
-              borderBottom: "1px solid rgba(255,255,255,0.1)",
-              paddingBottom: "0.75rem",
-            }}>
-              {[{ label: "Create Account", mode: "register" }, { label: "Sign In", mode: "login" }].map(({ label, mode }) => (
-                <button key={mode} onClick={() => setAuthMode(mode)} style={{
-                  background: "none", border: "none", cursor: "pointer",
-                  fontWeight: 700, fontSize: "0.95rem",
-                  color: authMode === mode ? "#ffffff" : "rgba(255,255,255,0.32)",
-                  borderBottom: authMode === mode ? "2px solid #6366f1" : "2px solid transparent",
-                  paddingBottom: "0.2rem", transition: "color 0.2s", fontFamily: "inherit",
-                }}>{label}</button>
-              ))}
-            </div>
-
-            {authMode === "register"
-              ? <Register onLoginClick={() => setAuthMode("login")} />
-              : <Login    onRegisterClick={() => setAuthMode("register")} />
-            }
+            <Login />
           </div>
         </div>
       )}

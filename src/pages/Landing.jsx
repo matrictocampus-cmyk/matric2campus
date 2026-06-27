@@ -177,6 +177,14 @@ export default function Landing() {
         FREE &bull; No sign up. No paywalls. Ever.
       </div>
 
+      {/* ── Sign In button (top right) ── */}
+      <button
+        className="m2c-signin-btn"
+        onClick={() => { setAuthMode("login"); setShowAuth(true); }}
+      >
+        Sign In
+      </button>
+
       {/* ── Hero content (centered, shifts up to make room for tiles) ── */}
       <div
         ref={contentRef}
@@ -433,6 +441,37 @@ export default function Landing() {
           background: #4ade80; flex-shrink: 0;
           animation: m2cDotPulse 2s ease-in-out infinite;
         }
+
+        /* ── Sign In button ── */
+        .m2c-signin-btn {
+          position: absolute;
+          top: clamp(1rem, 2.4vh, 1.6rem);
+          right: clamp(1.2rem, 3vw, 2rem);
+          z-index: 20;
+          background: rgba(8,8,18,0.62);
+          backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255,255,255,0.13);
+          border-radius: 100px;
+          padding: 0.3rem 1rem;
+          font-size: clamp(0.66rem, 1.25vw, 0.74rem);
+          font-weight: 600;
+          color: rgba(255,255,255,0.82);
+          letter-spacing: 0.02em;
+          cursor: pointer;
+          font-family: inherit;
+          opacity: 0;
+          animation: m2cFadeDown 0.7s ease 0.1s forwards;
+          transition: background 0.2s, border-color 0.2s, color 0.2s;
+          -webkit-tap-highlight-color: transparent;
+        }
+        @media (hover: hover) and (pointer: fine) {
+          .m2c-signin-btn:hover {
+            background: rgba(255,122,24,0.18);
+            border-color: rgba(255,122,24,0.45);
+            color: #fff;
+          }
+        }
+        .m2c-signin-btn:active { opacity: 0.75; }
 
         /* ── Student image (fade-in from right, left-edge fade) ── */
         .m2c-students-img {

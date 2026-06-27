@@ -305,11 +305,13 @@ export default function Landing() {
           background-size: 300% 300%;
           -webkit-background-clip: text; background-clip: text;
           -webkit-text-fill-color: transparent;
+          -webkit-text-stroke: 1px rgba(0,0,0,0.75);
           animation: m2cTextureShift 8s ease-in-out infinite;
           filter: drop-shadow(0 2px 6px rgba(180,130,90,0.5));
         }
         .m2c-two {
           color: #4f6eb3; -webkit-text-fill-color: #4f6eb3;
+          -webkit-text-stroke: 1px rgba(0,0,0,0.75);
           text-shadow: 0 2px 10px rgba(79,110,179,0.55);
           margin: 0 -0.01em;
         }
@@ -318,6 +320,7 @@ export default function Landing() {
           background-size: cover; background-position: center;
           -webkit-background-clip: text; background-clip: text;
           -webkit-text-fill-color: transparent;
+          -webkit-text-stroke: 1px rgba(0,0,0,0.75);
           filter: drop-shadow(0 2px 8px rgba(0,0,0,0.65)) brightness(1.1);
           animation: m2cFlagGlow 4s ease-in-out infinite;
         }
@@ -536,16 +539,16 @@ export default function Landing() {
             padding-top: 8vh !important;
             padding-bottom: 175px !important;
           }
-          /* Let flag breathe at the top — only darken toward bottom for button/tile readability */
+          /* Let flag + student ghost breathe — ease the bottom so both show through */
           .m2c-overlay {
             background: linear-gradient(
               to bottom,
               rgba(4,4,10,0.0)  0%,
               rgba(4,4,10,0.0)  18%,
-              rgba(4,4,10,0.22) 32%,
-              rgba(4,4,10,0.50) 52%,
-              rgba(4,4,10,0.82) 72%,
-              rgba(4,4,10,0.94) 100%
+              rgba(4,4,10,0.15) 32%,
+              rgba(4,4,10,0.30) 52%,
+              rgba(4,4,10,0.48) 72%,
+              rgba(4,4,10,0.62) 100%
             ) !important;
           }
           /* White-to-transparent fade: top → just past the brand name (~26vh) */
@@ -573,21 +576,24 @@ export default function Landing() {
             padding: 0 0.85rem 1rem !important;
           }
           .m2c-tile { padding: 0.55rem 0.65rem !important; }
-          /* Students: smaller, contained, bottom-right — more flag visible above */
+          /* Student photo: full-screen ghost layer — flag visible through it */
           .m2c-students-container {
-            width: 62% !important;
-            top: auto !important;
-            height: 52vh !important;
+            width: 100% !important;
+            left: 0 !important;
+            right: 0 !important;
+            top: 0 !important;
+            height: auto !important;
+            bottom: 0 !important;
             background: transparent !important;
             z-index: 2 !important;
           }
           .m2c-students-img {
-            object-fit: contain !important;
-            object-position: bottom right !important;
+            object-fit: cover !important;
+            object-position: center center !important;
+            opacity: 0.55 !important;
             animation: m2cImgReveal 1.3s cubic-bezier(0.16,1,0.3,1) 0.55s forwards !important;
-            /* fade top-edge so student blends into flag above */
-            mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 10%, black 28%) !important;
-            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 10%, black 28%) !important;
+            mask-image: none !important;
+            -webkit-mask-image: none !important;
           }
           /* Scale brand slightly for narrow screens */
           .m2c-brand { font-size: clamp(2.2rem, 10.5vw, 3rem) !important; }

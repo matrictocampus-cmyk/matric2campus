@@ -63,9 +63,9 @@ const PERSONALITY_STYLE = {
 };
 
 const TERM_REMINDER = {
-  1: "You entered Term 1 results. Come back after each term to keep your recommendations sharp.",
-  2: "You're halfway through the year. Update these with your Term 3 and Term 4 marks as they come in.",
-  3: "One term to go. Come back after Term 4 to lock in your final recommendations.",
+  1: "Your Term 1 results are live and your recommendations are ready. As Term 2, Term 3, and Term 4 marks come in, pop back and update them for sharper results.",
+  2: "Your results are already giving you useful recommendations. Update after Term 3 and Term 4 to keep them as accurate as possible.",
+  3: "Almost at final results. One more update after Term 4 and your recommendations will be as sharp as they can get.",
 };
 
 const BUNDLE_STATUS = {
@@ -91,13 +91,11 @@ export default function Dashboard() {
 
         const [
           { data: profile },
-          { data: onboarding },
           { data: courses },
           { data: bundle },
           { data: bucket },
         ] = await Promise.all([
           supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
-          supabase.from("onboarding_responses").select("personality_summary, results_term, financial_concern, dream_university, support_needed").eq("user_id", user.id).maybeSingle(),
           supabase.from("institution_courses").select("id, title, category, duration, entry_requirements, programme_type").limit(50),
           supabase.from("application_bundles").select("id, bundle_ref, status, created_at").eq("user_id", user.id).not("status", "in", '("completed","rejected")').maybeSingle(),
           supabase.from("application_bucket").select("id").eq("user_id", user.id).is("package_id", null),
@@ -112,7 +110,7 @@ export default function Dashboard() {
           activeApps = apps || [];
         }
 
-        setData({ profile, onboarding, courses: courses || [], bundle, bucketCount: bucket?.length || 0, activeApps });
+        setData({ profile, courses: courses || [], bundle, bucketCount: bucket?.length || 0, activeApps });
       } catch (err) {
         console.error("Dashboard load error:", err);
       } finally {
@@ -134,18 +132,18 @@ export default function Dashboard() {
     );
   }
 
-  const { profile, onboarding, courses, bundle, bucketCount, activeApps } = data || {};
+  const { profile, courses, bundle, bucketCount, activeApps } = data || {};
 
   const firstName      = profile?.first_name || "there";
   const hour           = new Date().getHours();
   const greeting       = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const aps            = calcAPS(profile?.subjects_marks);
+  const aps            = profile?.aps_score ?? calcAPS(profile?.subjects_marks);
   const subjectCount   = Object.keys(profile?.subjects_marks || {}).length;
   const interests      = profile?.career_interests || [];
   const personality    = profile?.personality_type || null;
   const grade          = profile?.grade || null;
   const province       = profile?.province || null;
-  const resultsTerm    = onboarding?.results_term || null;
+  const resultsTerm    = profile?.results_term || null;
   const hasOnboarding  = !!(profile?.onboarding_completed);
   const personalityStyle = PERSONALITY_STYLE[personality] || "bg-gray-50 text-gray-600 border-gray-200";
 
@@ -229,9 +227,9 @@ export default function Dashboard() {
 
       {/* ── Term reminder ──────────────────────────────────────────────────── */}
       {showTermReminder && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 mt-1.5" />
-          <p className="text-sm text-amber-800 leading-relaxed">
+        <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 flex items-start gap-3">
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-300 flex-shrink-0 mt-1.5" />
+          <p className="text-sm text-indigo-700 leading-relaxed">
             <span className="font-semibold">Term {resultsTerm} results saved.</span>{" "}
             {TERM_REMINDER[resultsTerm]}
           </p>

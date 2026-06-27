@@ -51,32 +51,35 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const APP_URL  = Deno.env.get("APP_URL")     ?? "https://matric2campus.co.za";
-  const FROM     = Deno.env.get("FROM_EMAIL")  ?? "Matric2Campus <onboarding@resend.dev>";
+  const APP_URL = Deno.env.get("APP_URL")    ?? "https://matric2campus.co.za";
+  const FROM    = Deno.env.get("FROM_EMAIL") ?? "Matric2Campus <team@matric2campus.co.za>";
 
+  let step = "init";
   try {
+    step = "parse_body";
     const payload: Payload = await req.json();
+
+    step = "extract_fields";
     const {
       name, email, password,
       personalityType, personalityEmoji, personalityTagline, personalitySummary,
       interests = [], aps,
     } = payload;
 
-    // Build keyword list from user's interests
+    step = "build_keywords";
     const keywords = [...new Set(
-      interests.flatMap(i => INTEREST_KEYWORDS[i] ?? [])
+      interests.flatMap((i: string) => INTEREST_KEYWORDS[i] ?? [])
     )];
 
-    // Query matched courses — no join, just institution_courses
+    step = "query_courses";
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
     let courses: Course[] = [];
-
     if (keywords.length > 0) {
-      const orFilter = keywords.slice(0, 8).map(k => `category.ilike.%${k}%`).join(",");
+      const orFilter = keywords.slice(0, 8).map((k: string) => `category.ilike.%${k}%`).join(",");
       const { data } = await supabase
         .from("institution_courses")
         .select("title, category, duration")
@@ -84,8 +87,6 @@ Deno.serve(async (req: Request) => {
         .limit(4);
       courses = (data ?? []) as Course[];
     }
-
-    // Fallback: any courses
     if (courses.length === 0) {
       const { data } = await supabase
         .from("institution_courses")
@@ -94,8 +95,10 @@ Deno.serve(async (req: Request) => {
       courses = (data ?? []) as Course[];
     }
 
+    step = "build_html";
     const html = buildEmail({ name, email, password, personalityType, personalityEmoji, personalityTagline, personalitySummary, aps, courses, appUrl: APP_URL });
 
+    step = "call_resend";
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -110,11 +113,12 @@ Deno.serve(async (req: Request) => {
       }),
     });
 
+    step = "parse_resend_response";
     const resendBody = await resendRes.json();
 
     if (!resendRes.ok) {
       console.error("Resend error:", JSON.stringify(resendBody));
-      return new Response(JSON.stringify({ error: resendBody }), {
+      return new Response(JSON.stringify({ error: resendBody, step }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -125,8 +129,8 @@ Deno.serve(async (req: Request) => {
     });
 
   } catch (err) {
-    console.error("send-welcome-email error:", err);
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error(`send-welcome-email crashed at step "${step}":`, err);
+    return new Response(JSON.stringify({ error: String(err), step }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

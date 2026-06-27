@@ -79,16 +79,16 @@ const TERM_OPTIONS = [
 
 const TERM_MESSAGES = {
   1: {
-    card: "You have three more terms ahead. These are a solid baseline to build from.",
-    hype: "You're early in the year. Three full terms ahead of you — that's plenty of time to push these marks higher. Come back after Term 2 and Term 3 to keep your recommendations up to date. Your Term 4 results are what lock everything in.",
+    card: "Your Term 1 results give us a great starting point right now.",
+    hype: "These results are already useful and your recommendations are live. As your Term 2, Term 3, and Term 4 marks come in, just come back and update them — your recommendations will get more personalised each time.",
   },
   2: {
-    card: "Halfway through the year. There's real room to improve before the final term.",
-    hype: "Halfway there. Your Term 2 results tell us a lot, but universities look at Term 4. Two more terms to move these numbers up. Come back and update your marks as the year goes on.",
+    card: "Your Term 2 results are a solid foundation. Your recommendations are ready.",
+    hype: "Good timing. Your Term 2 results give us a clear picture of where you are right now. When Term 3 and Term 4 marks come in, pop back and update them — each update sharpens the recommendations you get.",
   },
   3: {
-    card: "One term left. Come back after Term 4 to lock in your final results.",
-    hype: "One term to go. This is the stretch that matters most. Come back after Term 4 with your final results and we'll give you the most accurate recommendations possible.",
+    card: "Strong position. One more update after Term 4 and your recommendations will be as sharp as possible.",
+    hype: "You're nearly at your final results. Your recommendations are already accurate based on what you've entered. Come back after Term 4 with your final marks to get the most complete picture.",
   },
   4: null,
 };
@@ -337,41 +337,43 @@ export default function OnboardingFlow() {
       const userId = authData.user?.id;
       if (!userId) { setSubmitError("Something went wrong. Please try again."); return; }
 
+      const subjectsMarks = answers.subjects.length
+        ? Object.fromEntries(answers.subjects.map(s => [s, answers.marks[s] ?? 0]))
+        : null;
+
       await supabase.from("profiles").upsert({
-        user_id: userId,
-        email: answers.email.trim(),
-        full_name: `${answers.firstName} ${answers.lastName}`.trim(),
-        first_name: answers.firstName,
-        last_name: answers.lastName,
-        grade: answers.grade,
-        province: answers.province,
-        career_interests: answers.interests,
-        personality_type: personality.type,
+        user_id:              userId,
+        email:                answers.email.trim(),
+        full_name:            `${answers.firstName} ${answers.lastName}`.trim(),
+        first_name:           answers.firstName,
+        last_name:            answers.lastName,
+        grade:                answers.grade,
+        province:             answers.province,
+        career_interests:     answers.interests,
+        personality_type:     personality.type,
+        personality_tagline:  personality.tagline,
+        personality_summary:  personality.summary,
+        subjects_marks:       subjectsMarks,
+        aps_score:            answers.wantsPersonalisation && answers.subjects.length > 0 ? aps : null,
+        results_term:         answers.term ?? null,
+        dream_university:     answers.university || null,
+        financial_concern:    answers.financial || null,
+        support_needed:       answers.challenges || null,
         onboarding_completed: true,
-        subjects_marks: answers.subjects.length
-          ? Object.fromEntries(answers.subjects.map(s => [s, answers.marks[s] ?? 0]))
-          : null,
-        is_completed: true,
-        updated_at: new Date().toISOString(),
+        is_completed:         true,
+        updated_at:           new Date().toISOString(),
       }, { onConflict: "user_id" });
 
+      // onboarding_responses keeps the raw behavioural quiz record
       await supabase.from("onboarding_responses").upsert({
-        user_id: userId,
-        grade: answers.grade,
-        province: answers.province,
-        career_certainty: answers.certainty,
-        career_interests: answers.interests,
-        dream_university: answers.university || null,
-        financial_concern: answers.financial,
-        study_preference: answers.studyPref,
+        user_id:              userId,
+        career_certainty:     answers.certainty,
+        study_preference:     answers.studyPref,
         wants_personalisation: answers.wantsPersonalisation ?? false,
-        subjects_data: answers.subjects.map(s => ({ subject: s, mark: answers.marks[s] ?? 0 })),
-        motivation: answers.motivation,
-        support_needed: answers.challenges,
-        personality_type: personality.type,
-        personality_summary: personality.summary,
-        results_term: answers.term,
-        completed_at: new Date().toISOString(),
+        subjects_data:        answers.subjects.map(s => ({ subject: s, mark: answers.marks[s] ?? 0 })),
+        motivation:           answers.motivation,
+        results_term:         answers.term ?? null,
+        completed_at:         new Date().toISOString(),
       }, { onConflict: "user_id" });
 
       supabase.functions.invoke("send-welcome-email", {
@@ -386,6 +388,12 @@ export default function OnboardingFlow() {
           interests: answers.interests,
           aps: answers.wantsPersonalisation && answers.subjects.length > 0 ? aps : null,
         },
+      }).then(async ({ data, error }) => {
+        if (error) {
+          const body = await error.context?.json?.().catch(() => error.message);
+          console.warn("Welcome email error:", JSON.stringify(body));
+        }
+        if (data?.warning) console.warn("Welcome email warning:", data.warning);
       }).catch(err => console.warn("Welcome email failed (non-fatal):", err));
 
       setDone(true);
@@ -421,8 +429,8 @@ export default function OnboardingFlow() {
           <p style={{ fontSize: "0.85rem", color: T.accentLight, marginTop: 4, fontStyle: "italic" }}>"{personality.tagline}"</p>
         </div>
         {termMsg && (
-          <div style={{ background: "rgba(255,182,18,0.08)", border: "1px solid rgba(255,182,18,0.25)", borderRadius: 12, padding: "14px 20px", maxWidth: 340, width: "100%", marginBottom: 24, textAlign: "left" }}>
-            <p style={{ fontSize: "0.85rem", color: T.gold, lineHeight: 1.6 }}>
+          <div style={{ background: "rgba(99,102,241,0.07)", borderRadius: 12, padding: "14px 20px", maxWidth: 340, width: "100%", marginBottom: 24, textAlign: "left" }}>
+            <p style={{ fontSize: "0.85rem", color: T.accentLight, lineHeight: 1.6 }}>
               {termMsg.hype}
             </p>
           </div>
@@ -717,19 +725,19 @@ export default function OnboardingFlow() {
           ))}
         </div>
         {a.term && a.term !== 4 && (
-          <div style={{ padding: "14px 18px", background: "rgba(255,182,18,0.07)", border: "1px solid rgba(255,182,18,0.22)", borderRadius: 12, animation: "fadeIn 0.25s ease-out" }}>
-            <p style={{ fontSize: "0.88rem", color: T.gold, lineHeight: 1.6, fontWeight: 500 }}>
+          <div style={{ padding: "14px 18px", background: "rgba(99,102,241,0.07)", borderRadius: 12, animation: "fadeIn 0.25s ease-out" }}>
+            <p style={{ fontSize: "0.88rem", color: T.accentLight, lineHeight: 1.6 }}>
               {TERM_MESSAGES[a.term]?.card}
             </p>
-            <p style={{ fontSize: "0.8rem", color: "rgba(255,182,18,0.6)", marginTop: 6 }}>
-              Come back after Term 4 to lock in your final recommendations.
+            <p style={{ fontSize: "0.8rem", color: T.textMuted, marginTop: 5 }}>
+              Come back after Term 3 and Term 4 to update your marks and keep your recommendations sharp.
             </p>
           </div>
         )}
         {a.term === 4 && (
-          <div style={{ padding: "14px 18px", background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 12, animation: "fadeIn 0.25s ease-out" }}>
-            <p style={{ fontSize: "0.88rem", color: T.green, lineHeight: 1.6, fontWeight: 500 }}>
-              Final term results. These are what universities use. Let's make sure your recommendations are as accurate as possible.
+          <div style={{ padding: "14px 18px", background: "rgba(74,222,128,0.07)", borderRadius: 12, animation: "fadeIn 0.25s ease-out" }}>
+            <p style={{ fontSize: "0.88rem", color: T.green, lineHeight: 1.6 }}>
+              Final term results. These are what universities use. Your recommendations will be as accurate as they can be.
             </p>
           </div>
         )}
@@ -772,8 +780,8 @@ export default function OnboardingFlow() {
           </div>
         )}
         {termMsg && (
-          <div style={{ background: "rgba(255,182,18,0.07)", border: "1px solid rgba(255,182,18,0.2)", borderRadius: 12, padding: "14px 18px", textAlign: "left" }}>
-            <p style={{ fontSize: "0.85rem", color: T.gold, lineHeight: 1.65 }}>{termMsg.hype}</p>
+          <div style={{ background: "rgba(99,102,241,0.07)", borderRadius: 12, padding: "14px 18px", textAlign: "left" }}>
+            <p style={{ fontSize: "0.85rem", color: T.accentLight, lineHeight: 1.65 }}>{termMsg.hype}</p>
           </div>
         )}
         <p style={{ fontSize: "0.85rem", color: T.textMuted, marginTop: 20 }}>Set a password to save these results and get your full roadmap.</p>

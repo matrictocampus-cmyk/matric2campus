@@ -1,12 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { FiHome, FiBook, FiStar, FiFileText, FiSettings } from "react-icons/fi";
+import { FiHome, FiBook, FiStar, FiFileText, FiUser } from "react-icons/fi";
 
 const NAV_ITEMS = [
-  { name: "Home",     path: "/dashboard",    icon: FiHome     },
-  { name: "Courses",  path: "/institutions", icon: FiBook     },
-  { name: "Matches",  path: "/eligibility",  icon: FiStar     },
-  { name: "Apply",    path: "/apply",        icon: FiFileText },
-  { name: "Settings", path: "/settings",     icon: FiSettings },
+  { name: "Home",         path: "/dashboard",    icon: FiHome     },
+  { name: "Institutions", path: "/institutions", icon: FiBook     },
+  { name: "Matches",      path: "/eligibility",  icon: FiStar     },
+  { name: "Apply",        path: "/apply",        icon: FiFileText },
+  { name: "Profile",      path: "/profile",      icon: FiUser     },
 ];
 
 export default function BottomNav() {

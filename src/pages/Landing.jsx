@@ -178,7 +178,7 @@ export default function Landing() {
       {/* ── Sign In button (top right) ── */}
       <button
         className="m2c-signin-btn"
-        onClick={() => { setAuthMode("login"); setShowAuth(true); }}
+        onClick={() => setShowAuth(true)}
       >
         Sign In
       </button>

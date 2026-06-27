@@ -2,14 +2,14 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import ConfirmSignOut from "../components/ui/ConfirmSignOut";
-import { FiBell, FiChevronDown, FiSettings, FiLogOut } from "react-icons/fi";
+import { FiBell, FiChevronDown, FiUser, FiLogOut } from "react-icons/fi";
 
 const PAGE_TITLES = {
   "/dashboard":    "Dashboard",
-  "/institutions": "Explore Courses",
+  "/institutions": "Institutions",
   "/eligibility":  "My Matches",
   "/apply":        "Applications",
-  "/settings":     "Settings",
+  "/profile":      "My Profile",
 };
 
 export default function Topbar({ profile }) {
@@ -80,10 +80,10 @@ export default function Topbar({ profile }) {
 
                   {/* Menu items */}
                   <button
-                    onClick={() => { setMenuOpen(false); navigate("/settings"); }}
+                    onClick={() => { setMenuOpen(false); navigate("/profile"); }}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
-                    <FiSettings size={15} className="text-gray-400" /> Settings
+                    <FiUser size={15} className="text-gray-400" /> My Profile
                   </button>
 
                   <div className="border-t border-gray-100">

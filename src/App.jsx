@@ -18,6 +18,7 @@ import Apply from "./pages/Apply";
 import Eligibility from "./pages/Eligibility";
 import Payment from "./pages/Payment";
 import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
 // Pages – Admin
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import Analytics from "./pages/Admin/Analytics";
@@ -146,6 +147,7 @@ export default function App() {
         />
         <Route path="/payment" element={<Payment />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Route>
 

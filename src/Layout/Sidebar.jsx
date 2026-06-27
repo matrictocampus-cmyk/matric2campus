@@ -1,20 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
 import {
-  FiHome,
-  FiBook,
-  FiStar,
-  FiFileText,
-  FiSettings,
-  FiChevronLeft,
-  FiChevronRight,
+  FiHome, FiBook, FiStar, FiFileText, FiUser,
+  FiChevronLeft, FiChevronRight,
 } from "react-icons/fi";
 
 const NAV_ITEMS = [
-  { name: "Dashboard",   path: "/dashboard",    icon: <FiHome size={18} />     },
-  { name: "Courses",     path: "/institutions", icon: <FiBook size={18} />     },
-  { name: "My Matches",  path: "/eligibility",  icon: <FiStar size={18} />     },
-  { name: "Applications",path: "/apply",        icon: <FiFileText size={18} /> },
-  { name: "Settings",    path: "/settings",     icon: <FiSettings size={18} /> },
+  { name: "Dashboard",    path: "/dashboard",    icon: <FiHome size={18} />     },
+  { name: "Institutions", path: "/institutions", icon: <FiBook size={18} />     },
+  { name: "My Matches",   path: "/eligibility",  icon: <FiStar size={18} />     },
+  { name: "Applications", path: "/apply",        icon: <FiFileText size={18} /> },
+  { name: "Profile",      path: "/profile",      icon: <FiUser size={18} />     },
 ];
 
 function calcCompletion(profile) {
@@ -42,7 +37,6 @@ export default function Sidebar({ open = true, setOpen = () => {}, profile }) {
       className={`hidden md:flex flex-col h-screen flex-shrink-0 transition-all duration-300 border-r border-gray-100 bg-white
         ${open ? "w-64" : "w-16"}`}
     >
-      {/* Brand header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100 flex-shrink-0">
         {open && (
           <span className="text-lg font-extrabold text-gray-900 tracking-tight select-none">
@@ -58,7 +52,6 @@ export default function Sidebar({ open = true, setOpen = () => {}, profile }) {
         </button>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
         {NAV_ITEMS.map(item => {
           const active = location.pathname === item.path;
@@ -67,12 +60,9 @@ export default function Sidebar({ open = true, setOpen = () => {}, profile }) {
               key={item.path}
               to={item.path}
               title={!open ? item.name : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 group
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 group border-l-4
                 ${open ? "" : "justify-center"}
-                ${active
-                  ? "bg-orange-50 border-l-4 font-semibold"
-                  : "text-gray-600 hover:bg-gray-100 border-l-4 border-transparent"
-                }`}
+                ${active ? "bg-orange-50 font-semibold" : "text-gray-600 hover:bg-gray-100 border-transparent"}`}
               style={active ? { borderLeftColor: "#FF7A18" } : {}}
             >
               <span style={active ? { color: "#FF7A18" } : {}} className={active ? "" : "text-gray-500 group-hover:text-gray-700"}>
@@ -88,7 +78,6 @@ export default function Sidebar({ open = true, setOpen = () => {}, profile }) {
         })}
       </nav>
 
-      {/* Profile completion + user */}
       <div className="p-3 border-t border-gray-100 space-y-3 flex-shrink-0">
         {open && (
           <div>
@@ -104,8 +93,6 @@ export default function Sidebar({ open = true, setOpen = () => {}, profile }) {
             </div>
           </div>
         )}
-
-        {/* User row */}
         <div className={`flex items-center gap-2.5 ${open ? "" : "justify-center"}`}>
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"

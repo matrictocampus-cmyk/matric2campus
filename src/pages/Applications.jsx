@@ -116,6 +116,39 @@ function parseSubjectRequirement(reqStr) {
   return { subject: subj, requiredLevel };
 }
 
+// ─── Smart search ────────────────────────────────────────────────────────────
+const SA_ABBREVS = {
+  bcom: "bachelor of commerce", "b com": "bachelor of commerce",
+  bsc: "bachelor of science", "b sc": "bachelor of science",
+  ba: "bachelor of arts",
+  bed: "bachelor of education", "b ed": "bachelor of education",
+  llb: "bachelor of laws", "ll b": "bachelor of laws",
+  beng: "bachelor of engineering", "b eng": "bachelor of engineering",
+  ndip: "national diploma", "n dip": "national diploma",
+  ncv: "national certificate vocational",
+  bpharm: "bachelor of pharmacy",
+  btech: "bachelor of technology", "b tech": "bachelor of technology",
+  bsw: "bachelor of social work",
+  bpa: "bachelor of public administration",
+  mbchb: "bachelor of medicine and surgery",
+};
+
+function smartMatch(text, query) {
+  if (!query || !query.trim()) return true;
+  if (!text) return false;
+  const q = query.trim().toLowerCase();
+  const t = text.toLowerCase();
+  if (t.includes(q)) return true;
+  const norm = s => s.replace(/[\s.\-]+/g, "");
+  const nq = norm(q), nt = norm(t);
+  if (nt.includes(nq)) return true;
+  const expanded = SA_ABBREVS[nq] || SA_ABBREVS[q];
+  if (expanded && (t.includes(expanded) || norm(t).includes(norm(expanded)))) return true;
+  const words = q.split(/\s+/).filter(Boolean);
+  if (words.length > 1 && words.every(w => t.includes(w))) return true;
+  return false;
+}
+
 function buildUserSubjectAPSMap(subjectsMarksObject = {}) {
   const map = {};
   for (const [rawSubj, levelStr] of Object.entries(subjectsMarksObject || {})) {
@@ -603,7 +636,7 @@ export default function Applications() {
   };
 
   const visibleResults = (results || []).filter((r) =>
-    (r.course || "").toLowerCase().includes((searchQuery || "").toLowerCase())
+    smartMatch(r.course || "", searchQuery)
   );
 
   const doneAddToBucket = () => {

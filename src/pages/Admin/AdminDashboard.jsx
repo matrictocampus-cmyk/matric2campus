@@ -55,8 +55,14 @@ export default function AdminDashboard() {
 
   // Modal state for bundle details
   const [selectedBundle, setSelectedBundle] = useState(null);
+  const [selectedBundleUserId, setSelectedBundleUserId] = useState(null);
   const [bundleDetails, setBundleDetails] = useState([]); // will be array of rows from RPC
   const [detailsLoading, setDetailsLoading] = useState(false);
+
+  // Send message state (within bundle modal)
+  const [msgText, setMsgText] = useState("");
+  const [msgSending, setMsgSending] = useState(false);
+  const [msgSent, setMsgSent] = useState(false);
 
   // Modal state for comment on status update (existing)
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -103,6 +109,7 @@ export default function AdminDashboard() {
       created_at,
       updated_at,
       assigned_admin_id,
+      user_id,
       applications(id,status)
     `;
 
@@ -231,6 +238,42 @@ export default function AdminDashboard() {
   }, [sessionUser]);
 
   /* =====================================================
+     NOTIFICATION HELPER
+     ===================================================== */
+  const insertStatusNotification = async (bundleId, newStatus, customMessage = null) => {
+    try {
+      const allBundles = [
+        ...availableBundles, ...myWorkBundles,
+        ...actionRequiredBundles, ...completedBundles,
+      ];
+      const bund = allBundles.find(b => b.id === bundleId);
+      const uid = bund?.user_id;
+      if (!uid) return;
+
+      const STATUS_NOTIFS = {
+        in_progress:     { title: "Application In Progress",  msg: "Good news — our team is actively working on your application.",        type: "info"    },
+        submitted:       { title: "Application Submitted",    msg: "Your applications have been submitted to the institution(s).",         type: "info"    },
+        completed:       { title: "Application Completed!",   msg: "Your application has been fully processed. Check your email.",         type: "success" },
+        action_required: { title: "Action Required",          msg: customMessage || "Our team needs more info. Please check your application.", type: "warning" },
+        rejected:        { title: "Application Update",       msg: customMessage || "Your application was reviewed. Contact support for details.", type: "warning" },
+      };
+
+      const notif = STATUS_NOTIFS[newStatus];
+      if (!notif) return;
+
+      await supabase.from("notifications").insert({
+        user_id:   uid,
+        title:     notif.title,
+        message:   notif.msg,
+        type:      notif.type,
+        bundle_id: bundleId,
+      });
+    } catch (err) {
+      console.warn("Notification insert failed:", err);
+    }
+  };
+
+  /* =====================================================
      BUNDLE ACTIONS (claim, simple status update)
      ===================================================== */
   const handleClaimBundle = async (bundleId) => {
@@ -251,6 +294,7 @@ export default function AdminDashboard() {
         p_new_status: newStatus,
       });
       if (error) throw error;
+      await insertStatusNotification(bundleId, newStatus);
       fetchAllData();
     } catch (error) {
       console.error("Status update error:", error);
@@ -279,6 +323,7 @@ export default function AdminDashboard() {
         p_admin_comment: commentText,
       });
       if (error) throw error;
+      await insertStatusNotification(commentBundle.id, targetStatus, commentText);
       setShowCommentModal(false);
       fetchAllData();
     } catch (error) {
@@ -521,11 +566,15 @@ export default function AdminDashboard() {
      ===================================================== */
   const fetchBundleDetails = async (bundleId) => {
     setDetailsLoading(true);
+    setMsgText(""); setMsgSent(false);
     try {
-      const { data, error } = await supabase
-        .rpc("get_bundle_details", { p_bundle_id: bundleId });
+      const [{ data, error }, { data: bundleRow }] = await Promise.all([
+        supabase.rpc("get_bundle_details", { p_bundle_id: bundleId }),
+        supabase.from("application_bundles").select("user_id").eq("id", bundleId).single(),
+      ]);
       if (error) throw error;
       setBundleDetails(data || []);
+      setSelectedBundleUserId(bundleRow?.user_id || null);
     } catch (error) {
       console.error("Error fetching bundle details:", error);
       alert("Failed to load bundle details.");
@@ -681,6 +730,53 @@ export default function AdminDashboard() {
                     <div>Ready for Completion: {first.ready_for_completion ? '✅ Yes' : '❌ No'}</div>
                   </div>
                 </div>
+
+                {/* Send Message to Student */}
+                {selectedBundleUserId && (
+                  <div className="border-t pt-4 mt-2">
+                    <h3 className="font-semibold mb-2">Send Message to Student</h3>
+                    {msgSent ? (
+                      <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg p-3">
+                        ✅ Message sent — student will see it in their notification bell.
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <textarea
+                          value={msgText}
+                          onChange={e => setMsgText(e.target.value)}
+                          rows={3}
+                          placeholder="Type a message for the student…"
+                          className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        />
+                        <button
+                          disabled={!msgText.trim() || msgSending}
+                          onClick={async () => {
+                            if (!msgText.trim()) return;
+                            setMsgSending(true);
+                            try {
+                              await supabase.from("notifications").insert({
+                                user_id: selectedBundleUserId,
+                                title: "Message from Matric2Campus Team",
+                                message: msgText.trim(),
+                                type: "info",
+                                bundle_id: selectedBundle,
+                              });
+                              setMsgSent(true);
+                              setMsgText("");
+                            } catch (err) {
+                              alert("Failed to send message.");
+                            } finally {
+                              setMsgSending(false);
+                            }
+                          }}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {msgSending ? "Sending…" : "Send Notification"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
